@@ -17,7 +17,7 @@ from physlab.motion.planner import plan_joint_path
 from physlab.motion.trajectory import Trajectory, time_parameterize
 from physlab.robots.compose import RUNTIME_EE_SITE
 from physlab.robots.models import RobotSpec
-from physlab.sim.gl import renderer_class
+from physlab.sim.gl import close_renderers, register_camera, renderer_class
 from physlab.sim.world import SimWorld
 
 _SETTLE_RAD = 2e-3
@@ -159,7 +159,10 @@ class SimArm:
                 return _failed(FailureReason.TIMEOUT, "pose motion timed out", elapsed, self)
             command = trajectory.sample(min(elapsed, trajectory.duration_s)).tolist()
             self._write_ctrl(command)
+            stamp = world.time_s
             world.step()
+            if _state_diverged(world) or world.time_s <= stamp:
+                return _failed(FailureReason.TIMEOUT, "simulation became non-finite", elapsed)
             hit = _new_collision(world, self.name, self._finger_names(), initial)
             if hit is not None:
                 return _failed(FailureReason.COLLISION, hit, world.time_s - t0, self)
@@ -200,7 +203,10 @@ class SimArm:
             scale = _minimum_jerk(fraction)
             command = [a + (b - a) * scale for a, b in zip(start, target, strict=True)]
             self._write_ctrl(command)
+            stamp = world.time_s
             world.step()
+            if _state_diverged(world) or world.time_s <= stamp:
+                return _failed(FailureReason.TIMEOUT, "simulation became non-finite", elapsed)
             hit = _new_collision(world, self.name, self._finger_names(), initial)
             if hit is not None:
                 return _failed(FailureReason.COLLISION, hit, world.time_s - t0, self)
@@ -660,10 +666,13 @@ class SimCamera:
         self._renderer: Any = None
         self._renderer_model: mujoco.MjModel | None = None
         self._intrinsics = _intrinsics(width, height, fovy_deg)
+        register_camera(self)
 
     def _ensure_renderer(self) -> None:
         if self._renderer is not None and self._renderer_model is self._world.model:
             return
+        # One OSMesa context. Drop every camera before opening the replacement.
+        close_renderers()
         renderer_type = renderer_class()
         self._renderer = renderer_type(self._world.model, self._height, self._width)
         self._renderer_model = self._world.model
@@ -879,6 +888,14 @@ def _ok(duration_s: float, arm: SimArm, target: list[float]) -> MotionResult:
         final_pos_error_m=0.0,
         final_rot_error_rad=error,
         duration_s=duration_s,
+    )
+
+
+def _state_diverged(world: SimWorld) -> bool:
+    return not (
+        math.isfinite(world.time_s)
+        and bool(np.isfinite(world.data.qpos).all())
+        and bool(np.isfinite(world.data.qacc).all())
     )
 
 

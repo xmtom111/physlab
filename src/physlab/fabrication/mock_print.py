@@ -189,7 +189,7 @@ class MockPrintService:
                 rgba=(0.82, 0.84, 0.86, 1.0),
                 free=True,
                 aruco_id=aruco_id,
-                aruco_size_m=0.012,
+                aruco_size_m=0.03,
             )
         )
         return pose, aruco_id

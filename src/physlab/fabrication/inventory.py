@@ -35,6 +35,14 @@ class Inventory:
         """
         return self._items.get(part_instance_id)
 
+    def items(self) -> list[InventoryItem]:
+        """Return every tracked copy.
+
+        Returns:
+            Copies in insertion order.
+        """
+        return list(self._items.values())
+
     def __len__(self) -> int:
         """Return how many copies are tracked."""
         return len(self._items)

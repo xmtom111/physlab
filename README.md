@@ -52,6 +52,7 @@ uv run python examples/04_pick_cube.py
 uv run python examples/04b_mobile_pick.py
 uv run python examples/05_locate_markers.py
 uv run python examples/06_print_and_pick.py
+uv run python examples/07_assemble_microscope.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -101,7 +102,10 @@ the backend that actually renders.
 - `docs/motion.md` — inverse kinematics and planning
 - `docs/perception.md` — markers, fusion, and focus metrics
 - `docs/fabrication.md` — parametric parts, print checks, and printer services
+- `docs/assembly.md` — plans, pick/place, fastening, and focus screws
+- `docs/optics.md` — paraxial helpers and the simulated microscope
 - `examples/06_print_and_pick.py` — mock-print a lens holder and pick it up
+- `examples/07_assemble_microscope.py` — assemble and focus the microscope
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
 The real-hardware package is still empty.

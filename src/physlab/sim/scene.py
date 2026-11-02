@@ -155,6 +155,32 @@ class CameraSpec(BaseModel):
         return self
 
 
+class FocusStageSpec(BaseModel):
+    """A slide and a hinge that stand in for alignment screws.
+
+    The carriage origin sits on ``pose`` when both joints are at zero. The
+    slide resolution used by the fine-align tool is 5 µm. The hinge resolution
+    is 0.1 mrad.
+
+    Attributes:
+        name: Prefix for the carriage, joints, actuators, and knob site.
+        pose: Carriage pose at zero joint angles.
+        travel_m: Slide range, meters, symmetric about zero.
+        hinge_range_rad: Hinge range, radians, symmetric about zero.
+        knob_offset_m: Knob site position in the carriage frame, meters.
+        baseplate_pose: When set, a fixed non-colliding baseplate is added.
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
+
+    name: str
+    pose: Pose
+    travel_m: float = Field(default=0.003, gt=0)
+    hinge_range_rad: float = Field(default=0.05, gt=0)
+    knob_offset_m: tuple[float, float, float] = (0.0, 0.06, 0.05)
+    baseplate_pose: Pose | None = None
+
+
 class SceneSpec(BaseModel):
     """Static scene compiled into one MuJoCo model.
 
@@ -164,6 +190,8 @@ class SceneSpec(BaseModel):
         robots: Placed robots.
         objects: Rigid objects.
         cameras: Cameras.
+        focus_stages: Screw-adjustable carriages. Empty for scenes that do not
+            align a sample.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
@@ -173,6 +201,7 @@ class SceneSpec(BaseModel):
     robots: list[RobotPlacement] = Field(default_factory=list)
     objects: list[ObjectSpec] = Field(default_factory=list)
     cameras: list[CameraSpec] = Field(default_factory=list)
+    focus_stages: list[FocusStageSpec] = Field(default_factory=list)
 
 
 def build_mjspec(scene: SceneSpec, catalog: RobotCatalog) -> mujoco.MjSpec:
@@ -212,8 +241,89 @@ def build_mjspec(scene: SceneSpec, catalog: RobotCatalog) -> mujoco.MjSpec:
         _add_object(spec, obj)
     for camera in scene.cameras:
         _add_camera(spec, camera)
+    for stage in scene.focus_stages:
+        _add_focus_stage(spec, stage)
     _set_offscreen(spec, scene)
     return spec
+
+
+def _add_focus_stage(spec: mujoco.MjSpec, stage: FocusStageSpec) -> None:
+    if stage.baseplate_pose is not None:
+        _add_baseplate(spec, stage.baseplate_pose)
+    mount = spec.worldbody.add_body(
+        name=f"{stage.name}_mount",
+        pos=list(stage.pose.position_m),
+        quat=list(stage.pose.quat_wxyz),
+    )
+    carriage = mount.add_body(name=f"{stage.name}_carriage")
+    _slide_and_hinge(carriage, stage)
+    carriage.add_geom(
+        name=f"{stage.name}_mass",
+        type=mujoco.mjtGeom.mjGEOM_BOX,
+        size=[0.01, 0.01, 0.005],
+        mass=0.05,
+        density=0.0,
+        contype=0,
+        conaffinity=0,
+    )
+    carriage.add_site(
+        name=f"{stage.name}_knob",
+        pos=list(stage.knob_offset_m),
+        size=[0.004, 0.004, 0.004],
+    )
+    _screw_actuator(spec, f"{stage.name}_z", stage.travel_m)
+    _screw_actuator(spec, f"{stage.name}_rx", stage.hinge_range_rad)
+
+
+def _slide_and_hinge(carriage: mujoco.MjsBody, stage: FocusStageSpec) -> None:
+    carriage.add_joint(
+        name=f"{stage.name}_z",
+        type=mujoco.mjtJoint.mjJNT_SLIDE,
+        axis=[0.0, 0.0, 1.0],
+        limited=1,
+        range=[-stage.travel_m, stage.travel_m],
+    )
+    carriage.add_joint(
+        name=f"{stage.name}_rx",
+        type=mujoco.mjtJoint.mjJNT_HINGE,
+        axis=[1.0, 0.0, 0.0],
+        limited=1,
+        range=[-stage.hinge_range_rad, stage.hinge_range_rad],
+    )
+
+
+def _screw_actuator(spec: mujoco.MjSpec, joint: str, travel: float) -> None:
+    # Same affine position servo the gantry uses: kp on the diagonal, damping.
+    spec.add_actuator(
+        name=joint,
+        type=mujoco.mjtActuator.mjACTUATOR_POSITION,
+        target=joint,
+        trntype=mujoco.mjtTrn.mjTRN_JOINT,
+        gaintype=mujoco.mjtGain.mjGAIN_AFFINE,
+        biastype=mujoco.mjtBias.mjBIAS_AFFINE,
+        gainprm=[200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        biasprm=[0.0, -200.0, -20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ctrllimited=1,
+        ctrlrange=[-travel, travel],
+    )
+
+
+def _add_baseplate(spec: mujoco.MjSpec, pose: Pose) -> None:
+    body = spec.worldbody.add_body(
+        name="baseplate",
+        pos=list(pose.position_m),
+        quat=list(pose.quat_wxyz),
+    )
+    body.add_geom(
+        name="baseplate_visual",
+        type=mujoco.mjtGeom.mjGEOM_BOX,
+        size=[0.18, 0.05, 0.004],
+        rgba=[0.35, 0.36, 0.38, 1.0],
+        contype=0,
+        conaffinity=0,
+        density=0.0,
+        mass=0.0,
+    )
 
 
 def _add_light(spec: mujoco.MjSpec) -> None:

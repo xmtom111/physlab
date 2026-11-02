@@ -1,0 +1,60 @@
+id: microscope_v0
+components:
+  - id: led
+    part_name: led_holder
+    aruco_id: 31
+  - id: sample
+    part_name: sample_stage
+    aruco_id: 32
+  - id: objective
+    part_name: lens_holder
+    aruco_id: 33
+  - id: tube
+    part_name: tube
+    aruco_id: 34
+  - id: camera
+    part_name: camera_mount
+    aruco_id: 35
+steps:
+  - {op: pick, component: led}
+  - op: place
+    component: led
+    target: {position_m: [0.30, 0.0, 0.75], quat_wxyz: [1, 0, 0, 0]}
+    tol_pos_m: 0.006
+    tol_rot_rad: 0.2
+  - {op: fasten, component: led, to: baseplate}
+  - {op: pick, component: sample}
+  - op: place
+    component: sample
+    target: {position_m: [0.38, 0.0, 0.75], quat_wxyz: [1, 0, 0, 0]}
+    tol_pos_m: 0.006
+    tol_rot_rad: 0.2
+  - {op: fasten, component: sample, to: sample_stage_focus_carriage}
+  - {op: pick, component: objective}
+  - op: place
+    component: objective
+    target: {position_m: [0.46, 0.0, 0.75], quat_wxyz: [1, 0, 0, 0]}
+    tol_pos_m: 0.006
+    tol_rot_rad: 0.2
+  - {op: fasten, component: objective, to: baseplate}
+  - {op: pick, component: tube}
+  - op: place
+    component: tube
+    target: {position_m: [0.54, 0.0, 0.75], quat_wxyz: [1, 0, 0, 0]}
+    tol_pos_m: 0.006
+    tol_rot_rad: 0.2
+  - {op: fasten, component: tube, to: baseplate}
+  - {op: pick, component: camera}
+  - op: place
+    component: camera
+    target: {position_m: [0.62, 0.0, 0.75], quat_wxyz: [1, 0, 0, 0]}
+    tol_pos_m: 0.006
+    tol_rot_rad: 0.2
+  - {op: fasten, component: camera, to: baseplate}
+  - op: align
+    component: sample
+    dof: [z]
+    objective: variance_of_laplacian
+    max_iters: 40
+    method: coordinate_search
+  - {op: inspect, camera: microscope, check: focused}

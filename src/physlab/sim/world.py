@@ -50,6 +50,7 @@ class SimWorld:
         self.data = mujoco.MjData(self.model)
         self._rng = np.random.default_rng(config.seed)
         self._welds: dict[tuple[str, str], str] = {}
+        self._weld_offsets: dict[tuple[str, str], tuple[str, str, Pose]] = {}
         self._kinematic_holds: list[Callable[[], None]] = []
         self._apply_initial_state()
         self._saved = _snapshot(self.model, self.data)
@@ -152,18 +153,26 @@ class SimWorld:
             self._require_body(body_a)
             self._require_body(body_b)
             saved = _snapshot(self.model, self.data)
+            _sync_world_pose(self._spec, self.model, self.data, body_a)
+            _sync_world_pose(self._spec, self.model, self.data, body_b)
             name = f"weld_{len(self._welds)}_{body_a}_{body_b}"
+            # A zero data vector tells the compiler to freeze the relative pose
+            # from the spec. A hand-filled relpose is reshuffled and pulls the
+            # part back toward where it was spawned.
             self._spec.add_equality(
                 name=name,
                 type=mujoco.mjtEq.mjEQ_WELD,
                 name1=body_a,
                 name2=body_b,
                 objtype=mujoco.mjtObj.mjOBJ_BODY,
-                data=_weld_relpose(self.model, self.data, body_a, body_b),
+                data=[0.0] * int(mujoco.mjNEQDATA),
                 active=1,
             )
             self._welds[pair] = name
+            offset = _movable_offset(self, body_a, body_b)
             self._recompile(saved)
+            if offset is not None:
+                self._weld_offsets[pair] = offset
 
     def unweld(self, body_a: str, body_b: str) -> None:
         """Remove a weld created by :meth:`weld`.
@@ -179,6 +188,7 @@ class SimWorld:
         with self._lock:
             pair = _weld_key(body_a, body_b)
             name = self._welds.pop(pair, None)
+            self._weld_offsets.pop(pair, None)
             if name is None:
                 raise ConfigError("Bodies are not welded", details={"bodies": pair})
             saved = _snapshot(self.model, self.data)
@@ -186,6 +196,19 @@ class SimWorld:
             if equality is not None:
                 self._spec.delete(equality)
             self._recompile(saved)
+
+    def project_welds(self) -> None:
+        """Place each free welded body on the pose captured at :meth:`weld`.
+
+        The focus screw is a position joint. A welded part follows it only
+        after the constraint is integrated, so alignment sets the pose directly.
+        """
+        with self._lock:
+            for driver, follower, relative in self._weld_offsets.values():
+                if max(abs(value) for value in relative.position_m) > 0.05:
+                    continue
+                _write_free_pose(self, follower, self.body_pose(driver).compose(relative))
+            mujoco.mj_forward(self.model, self.data)
 
     def contacts(self) -> list[Contact]:
         """Return the active contacts.
@@ -448,28 +471,60 @@ def _maybe_viewer(world: SimWorld) -> Any:
     return mujoco.viewer.launch_passive(world.model, world.data)
 
 
-def _weld_key(body_a: str, body_b: str) -> tuple[str, str]:
-    return (body_a, body_b) if body_a <= body_b else (body_b, body_a)
-
-
-def _weld_relpose(
+def _sync_world_pose(
+    spec: mujoco.MjSpec,
     model: mujoco.MjModel,
     data: mujoco.MjData,
-    body_a: str,
-    body_b: str,
-) -> list[float]:
-    pose_a = _pose_from_xmat(
-        data.xpos[_named(model, mujoco.mjtObj.mjOBJ_BODY, body_a)],
-        data.xmat[_named(model, mujoco.mjtObj.mjOBJ_BODY, body_a)],
+    name: str,
+) -> None:
+    """Write a world-child's live pose into the spec before a weld compiles.
+
+    The compiler freezes the weld's relative pose from the spec, not from
+    ``qpos``. A part that has moved since spawn would otherwise be pulled
+    back to the pickup slot.
+    """
+    body = spec.body(name)
+    if body is None or body.parent is None or body.parent.name != "world":
+        return
+    pose = _pose_from_xmat(
+        data.xpos[_named(model, mujoco.mjtObj.mjOBJ_BODY, name)],
+        data.xmat[_named(model, mujoco.mjtObj.mjOBJ_BODY, name)],
     )
-    pose_b = _pose_from_xmat(
-        data.xpos[_named(model, mujoco.mjtObj.mjOBJ_BODY, body_b)],
-        data.xmat[_named(model, mujoco.mjtObj.mjOBJ_BODY, body_b)],
-    )
-    relative = pose_a.inverse().compose(pose_b.model_copy(update={"frame": "body"}))
-    # eq_data is the relative pose of body2 in body1, padded to mjNEQDATA (12).
-    pose = [*relative.position_m, *relative.quat_wxyz]
-    return pose + [0.0] * (int(mujoco.mjNEQDATA) - len(pose))
+    body.pos = list(pose.position_m)
+    body.quat = list(pose.quat_wxyz)
+
+
+def _movable_offset(world: SimWorld, body_a: str, body_b: str) -> tuple[str, str, Pose] | None:
+    free_a = _free_joint(world, body_a)
+    free_b = _free_joint(world, body_b)
+    if free_a >= 0 and free_b < 0:
+        driver, follower = body_b, body_a
+    elif free_b >= 0 and free_a < 0:
+        driver, follower = body_a, body_b
+    else:
+        return None
+    follower_pose = world.body_pose(follower).model_copy(update={"frame": "body"})
+    relative = world.body_pose(driver).inverse().compose(follower_pose)
+    return driver, follower, relative
+
+
+def _free_joint(world: SimWorld, body: str) -> int:
+    return int(mujoco.mj_name2id(world.model, mujoco.mjtObj.mjOBJ_JOINT, f"{body}_free"))
+
+
+def _write_free_pose(world: SimWorld, body: str, pose: Pose) -> None:
+    joint_id = _free_joint(world, body)
+    if joint_id < 0:
+        return
+    address = int(world.model.jnt_qposadr[joint_id])
+    world.data.qpos[address : address + 3] = pose.position_m
+    world.data.qpos[address + 3 : address + 7] = pose.quat_wxyz
+    velocity = int(world.model.jnt_dofadr[joint_id])
+    world.data.qvel[velocity : velocity + 6] = 0.0
+
+
+def _weld_key(body_a: str, body_b: str) -> tuple[str, str]:
+    return (body_a, body_b) if body_a <= body_b else (body_b, body_a)
 
 
 def _pose_from_xmat(position: np.ndarray, xmat: np.ndarray) -> Pose:

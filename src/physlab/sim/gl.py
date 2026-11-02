@@ -16,6 +16,28 @@ from physlab.core.errors import PerceptionFailed
 
 _RENDERER: Any | None = None
 _BACKEND: str | None = None
+# OSMesa has one context. Cameras registered here drop their renderer together.
+_CAMERAS: list[Any] = []
+
+
+def register_camera(camera: Any) -> None:
+    """Remember ``camera`` so a scene rebuild can drop every GL context."""
+    _CAMERAS.append(camera)
+
+
+def close_renderers() -> None:
+    """Free every camera renderer and clear the pointers.
+
+    A closed renderer left on another camera paints nothing and then raises
+    ``render cannot be called after close``.
+    """
+    for camera in _CAMERAS:
+        renderer = camera._renderer
+        if renderer is None:
+            continue
+        renderer.close()
+        camera._renderer = None
+        camera._renderer_model = None
 
 
 def renderer_class() -> Any:  # MuJoCo's Renderer class is untyped.

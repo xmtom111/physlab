@@ -3,6 +3,7 @@
 from physlab.sim.recorder import Recorder
 from physlab.sim.scene import (
     CameraSpec,
+    FocusStageSpec,
     ObjectSpec,
     PrimitiveKind,
     PrimitiveSpec,
@@ -17,6 +18,7 @@ from physlab.sim.world import SimWorld
 
 __all__ = [
     "CameraSpec",
+    "FocusStageSpec",
     "ObjectSpec",
     "PrimitiveKind",
     "PrimitiveSpec",

@@ -194,7 +194,8 @@ def _tube(params: BaseModel, directory: Path) -> PartArtifact:
         _dump(spec),
         solid,
         directory,
-        [cylinder_primitive(outer_r, spec.length_mm)],
+        # Closed xArm pads sit about 12 mm from the centerline.
+        [cylinder_primitive(max(outer_r, 13.0), spec.length_mm)],
         frames,
         face,
     )

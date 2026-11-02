@@ -39,3 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `configs/printers/printer_mcp.yaml`. `physlab printer tools` and
   `physlab printer submit` talk to that server.
   `examples/06_print_and_pick.py` mock-prints a lens holder and picks it up.
+- Assembly plans, pick/place with a wrist check and up to three place
+  corrections, a dockable fine-align tool (`coordinate_search` or
+  `nelder_mead`), and a paraxial microscope model.
+  `examples/07_assemble_microscope.py` mock-prints the microscope, assembles
+  it, focuses the sample, and saves a PNG and an MP4.
+  `examples/plans/microscope_v0.yaml` is the checked-in plan.
