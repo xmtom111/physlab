@@ -1,0 +1,54 @@
+id: kinova_gen3
+display_name: Kinova Gen3
+kind: arm
+license: BSD-3-Clause
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: kinova_gen3
+  xml_file: gen3.xml
+  arm_joints:
+  - joint_1
+  - joint_2
+  - joint_3
+  - joint_4
+  - joint_5
+  - joint_6
+  - joint_7
+  arm_actuators:
+  - joint_1
+  - joint_2
+  - joint_3
+  - joint_4
+  - joint_5
+  - joint_6
+  - joint_7
+  ee_site: pinch_site
+  ee_body: bracelet_link
+  ee_offset_m:
+  - 0.0
+  - 0.0
+  - -0.061525
+  home_qpos_rad:
+  - 0.0
+  - 0.26179939
+  - 3.14159265
+  - -2.26892803
+  - 0.0
+  - 0.95993109
+  - 1.57079633
+  gripper:
+    actuator: fingers_actuator
+    open_ctrl: 0.0
+    closed_ctrl: 255.0
+    finger_geoms:
+    - right_pad1
+    - right_pad2
+    - left_pad1
+    - left_pad2
+    attach_from: robotiq_2f85
+  base_type: none
+real:
+  driver: null
+  sdk_package: null
+  notes: robotiq_2f85 is attached at pinch_site. Gripper license is BSD-2-Clause.

@@ -1,0 +1,27 @@
+id: gantry_xyz
+display_name: XYZ gantry
+kind: gantry
+license: MIT
+available: true
+sim:
+  source: procedural
+  procedural_builder: gantry_xyz
+  base_type: none
+  arm_joints:
+  - x
+  - y
+  - z
+  arm_actuators:
+  - x
+  - y
+  - z
+  ee_site: tool
+  ee_body: z_carriage
+  home_qpos_rad:
+  - 0.0
+  - 0.0
+  - 0.0
+real:
+  driver: null
+  sdk_package: null
+  notes: Procedural gantry. Prismatic travel is 0.5 m, 0.5 m, and 0.3 m.

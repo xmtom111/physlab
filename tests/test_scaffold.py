@@ -36,12 +36,13 @@ def test_package_imports(name: str) -> None:
     importlib.import_module(name)
 
 
-def test_fetch_assets_is_t2_stub() -> None:
+def test_fetch_script_uses_library() -> None:
     path = Path(__file__).resolve().parents[1] / "scripts" / "fetch_assets.py"
-    spec = importlib.util.spec_from_file_location("fetch_assets_stub", path)
+    spec = importlib.util.spec_from_file_location("fetch_assets_script", path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    with pytest.raises(NotImplementedError, match="Implemented in T2"):
-        module.fetch_assets()
+    from physlab.robots.fetch import fetch_assets
+
+    assert module.fetch_assets is fetch_assets

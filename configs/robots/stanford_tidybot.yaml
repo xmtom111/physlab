@@ -1,0 +1,63 @@
+id: stanford_tidybot
+display_name: Stanford TidyBot
+kind: mobile_manipulator
+license: MIT
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: stanford_tidybot
+  xml_file: tidybot.xml
+  arm_joints:
+  - joint_1
+  - joint_2
+  - joint_3
+  - joint_4
+  - joint_5
+  - joint_6
+  - joint_7
+  arm_actuators:
+  - joint_1
+  - joint_2
+  - joint_3
+  - joint_4
+  - joint_5
+  - joint_6
+  - joint_7
+  ee_site: pinch_site
+  ee_body: bracelet_link
+  ee_offset_m:
+  - 0.0
+  - 0.0
+  - -0.181525
+  home_qpos_rad:
+  - 0.0
+  - 0.26179939
+  - 3.14159265
+  - -2.26892803
+  - 0.0
+  - 0.95993109
+  - 1.57079633
+  gripper:
+    actuator: fingers_actuator
+    open_ctrl: 0.0
+    closed_ctrl: 255.0
+    finger_geoms:
+    - right_pad1
+    - right_pad2
+    - left_pad1
+    - left_pad2
+    attach_from: null
+  base_type: holonomic_joints
+  base_joints:
+  - joint_x
+  - joint_y
+  - joint_th
+  base_actuators:
+  - joint_x
+  - joint_y
+  - joint_th
+real:
+  driver: null
+  sdk_package: null
+  notes: 'README: the base is MIT. The included Kinova Gen3 is BSD-3-Clause and the
+    Robotiq 2F-85 is BSD-2-Clause. Base joints are prismatic x, y and yaw.'

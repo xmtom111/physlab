@@ -1,0 +1,55 @@
+id: ufactory_xarm7
+display_name: UFACTORY xArm 7
+kind: arm
+license: BSD-3-Clause
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: ufactory_xarm7
+  xml_file: xarm7.xml
+  arm_joints:
+  - joint1
+  - joint2
+  - joint3
+  - joint4
+  - joint5
+  - joint6
+  - joint7
+  arm_actuators:
+  - act1
+  - act2
+  - act3
+  - act4
+  - act5
+  - act6
+  - act7
+  ee_site: link_tcp
+  ee_body: xarm_gripper_base_link
+  ee_offset_m:
+  - 0.0
+  - 0.0
+  - 0.172
+  home_qpos_rad:
+  - 0.0
+  - -0.247
+  - 0.0
+  - 0.909
+  - 0.0
+  - 1.15644
+  - 0.0
+  gripper:
+    actuator: gripper
+    open_ctrl: 0.0
+    closed_ctrl: 255.0
+    finger_geoms:
+    - left_finger_pad_1
+    - left_finger_pad_2
+    - right_finger_pad_1
+    - right_finger_pad_2
+    attach_from: null
+  base_type: none
+real:
+  driver: xarm
+  sdk_package: xarm-python-sdk
+  notes: Gripper ctrlrange in hand.xml is 0 to 255. Joint range on the driver is 0
+    to 0.85, same 0-open mapping as the bundled linkage.

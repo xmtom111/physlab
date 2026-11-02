@@ -1,0 +1,50 @@
+id: franka_emika_panda
+display_name: Franka Emika Panda
+kind: arm
+license: Apache-2.0
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: franka_emika_panda
+  xml_file: panda.xml
+  arm_joints:
+  - joint1
+  - joint2
+  - joint3
+  - joint4
+  - joint5
+  - joint6
+  - joint7
+  arm_actuators:
+  - actuator1
+  - actuator2
+  - actuator3
+  - actuator4
+  - actuator5
+  - actuator6
+  - actuator7
+  ee_body: hand
+  ee_offset_m:
+  - 0.0
+  - 0.0
+  - 0.0
+  home_qpos_rad:
+  - 0.0
+  - 0.0
+  - 0.0
+  - -1.57079
+  - 0.0
+  - 1.57079
+  - -0.7853
+  gripper:
+    actuator: actuator8
+    open_ctrl: 255.0
+    closed_ctrl: 0.0
+    finger_geoms: []
+    attach_from: null
+  base_type: none
+real:
+  driver: franka
+  sdk_package: franky-control
+  notes: hand.xml remaps finger joint 0 to 0.04 onto ctrl 0 to 255. Home keyframe
+    ctrl 255 has finger qpos 0.04, so 255 is open. Finger geoms in the MJCF are unnamed.

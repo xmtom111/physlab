@@ -110,7 +110,12 @@ markers = [
   "hardware: tests that require real hardware (excluded by -m 'not hardware')",
   "render: tests that require a GL renderer",
   "slow: tests that take longer than 10 seconds",
+  "assets: tests that need assets/mujoco_menagerie from physlab assets fetch",
 ]
+
+[[tool.mypy.overrides]]
+module = ["mujoco", "mujoco.*"]
+ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["physlab"]

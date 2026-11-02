@@ -1,0 +1,48 @@
+id: trs_so_arm100
+display_name: SO-ARM100
+kind: arm
+license: Apache-2.0
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: trs_so_arm100
+  xml_file: so_arm100.xml
+  arm_joints:
+  - Rotation
+  - Pitch
+  - Elbow
+  - Wrist_Pitch
+  - Wrist_Roll
+  arm_actuators:
+  - Rotation
+  - Pitch
+  - Elbow
+  - Wrist_Pitch
+  - Wrist_Roll
+  ee_body: Fixed_Jaw
+  home_qpos_rad:
+  - 0.0
+  - -1.57
+  - 1.57
+  - 1.57
+  - -1.57
+  gripper:
+    actuator: Jaw
+    open_ctrl: 1.75
+    closed_ctrl: -0.174
+    finger_geoms:
+    - fixed_jaw_pad_1
+    - fixed_jaw_pad_2
+    - fixed_jaw_pad_3
+    - fixed_jaw_pad_4
+    - moving_jaw_pad_1
+    - moving_jaw_pad_2
+    - moving_jaw_pad_3
+    - moving_jaw_pad_4
+    attach_from: null
+  base_type: none
+real:
+  driver: so100_lerobot
+  sdk_package: lerobot
+  notes: Jaw default class range is -0.174 to 1.75 rad. open_ctrl is the upper endpoint
+    and closed_ctrl is the lower endpoint.

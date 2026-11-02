@@ -1,0 +1,22 @@
+id: generic_diffdrive
+display_name: Generic differential drive
+kind: mobile_base
+license: MIT
+available: true
+sim:
+  source: procedural
+  procedural_builder: generic_diffdrive
+  base_type: diff_drive
+  base_joints:
+  - left_wheel
+  - right_wheel
+  base_actuators:
+  - left_wheel_vel
+  - right_wheel_vel
+  mount_site: mount
+  home_qpos_rad: []
+real:
+  driver: null
+  sdk_package: null
+  notes: 'Procedural chassis: 0.40 x 0.30 x 0.12 m box, wheel radius 0.05 m, passive
+    caster ball, mount site on the top center.'

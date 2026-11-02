@@ -1,24 +1,23 @@
-"""Download third-party assets declared in ``configs/assets.lock``.
+"""Download MuJoCo Menagerie into ``assets/mujoco_menagerie``.
 
-The downloader is implemented in task T2. This module is a placeholder so the
-repository layout matches the project map.
+The commit comes from ``configs/assets.lock``. ``menagerie_commit: latest``
+resolves ``main`` and writes the hash back. ``physlab assets fetch`` calls the
+same function.
 """
 
 from __future__ import annotations
 
+from physlab.core.logging import configure_logging, get_logger
+from physlab.robots.fetch import fetch_assets
 
-def fetch_assets() -> None:
-    """Download pinned assets into the local ``assets`` directory.
-
-    Raises:
-        NotImplementedError: Always. Implemented in T2.
-    """
-    raise NotImplementedError("Implemented in T2")
+_logger = get_logger(__name__)
 
 
 def main() -> None:
-    """Run the asset downloader from the command line."""
-    fetch_assets()
+    """Clone or update Menagerie and log the checked-out commit."""
+    configure_logging("INFO", False)
+    commit = fetch_assets()
+    _logger.info("menagerie_ready", commit=commit)
 
 
 if __name__ == "__main__":

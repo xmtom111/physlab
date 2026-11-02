@@ -1,2 +1,2 @@
 # Pin for third-party assets. "latest" is resolved by scripts/fetch_assets.py (T2).
-menagerie_commit: latest
+menagerie_commit: b0655057a9df2abe39ea7fc989914ba6f248301c

@@ -1,0 +1,47 @@
+id: trossen_wx250s
+display_name: Trossen WX250s
+kind: arm
+license: BSD-3-Clause
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: trossen_wx250s
+  xml_file: wx250s.xml
+  arm_joints:
+  - waist
+  - shoulder
+  - elbow
+  - forearm_roll
+  - wrist_angle
+  - wrist_rotate
+  arm_actuators:
+  - waist
+  - shoulder
+  - elbow
+  - forearm_roll
+  - wrist_angle
+  - wrist_rotate
+  ee_body: wx250s/gripper_link
+  home_qpos_rad:
+  - 0.0
+  - -0.96
+  - 1.16
+  - 0.0
+  - -0.3
+  - 0.0
+  gripper:
+    actuator: gripper
+    open_ctrl: 0.037
+    closed_ctrl: 0.015
+    finger_geoms:
+    - left/left_g0
+    - left/left_g1
+    - right/right_g0
+    - right/right_g1
+    attach_from: null
+  base_type: none
+real:
+  driver: null
+  sdk_package: null
+  notes: left_finger slide range is 0.015 to 0.037 and right_finger is mirrored. The
+    gripper actuator drives left_finger. 0.037 is open and 0.015 is closed.

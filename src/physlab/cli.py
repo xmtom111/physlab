@@ -9,6 +9,7 @@ import yaml
 
 from physlab import __version__
 from physlab.core.config import load_config
+from physlab.robots.cli import register
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 config_app = typer.Typer(add_completion=False, no_args_is_help=True)
@@ -48,3 +49,6 @@ def config_show() -> None:
     loaded = load_config()
     rendered = yaml.safe_dump(loaded.model_dump(mode="json"), sort_keys=False).rstrip()
     typer.echo(rendered)
+
+
+register(app)

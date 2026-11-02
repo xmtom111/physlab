@@ -1,0 +1,52 @@
+id: universal_robots_ur5e
+display_name: Universal Robots UR5e
+kind: arm
+license: BSD-3-Clause
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: universal_robots_ur5e
+  xml_file: ur5e.xml
+  arm_joints:
+  - shoulder_pan_joint
+  - shoulder_lift_joint
+  - elbow_joint
+  - wrist_1_joint
+  - wrist_2_joint
+  - wrist_3_joint
+  arm_actuators:
+  - shoulder_pan
+  - shoulder_lift
+  - elbow
+  - wrist_1
+  - wrist_2
+  - wrist_3
+  ee_site: attachment_site
+  ee_body: wrist_3_link
+  ee_offset_m:
+  - 0.0
+  - 0.1
+  - 0.0
+  home_qpos_rad:
+  - -1.5708
+  - -1.5708
+  - 1.5708
+  - -1.5708
+  - -1.5708
+  - 0.0
+  gripper:
+    actuator: fingers_actuator
+    open_ctrl: 0.0
+    closed_ctrl: 255.0
+    finger_geoms:
+    - right_pad1
+    - right_pad2
+    - left_pad1
+    - left_pad2
+    attach_from: robotiq_2f85
+  base_type: none
+real:
+  driver: ur_rtde
+  sdk_package: ur-rtde
+  notes: robotiq_2f85 is attached at attachment_site. Its 2f85.xml comment maps joint
+    0..0.8 onto ctrl 0..255. Gripper license is BSD-2-Clause.

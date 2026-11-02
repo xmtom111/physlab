@@ -1,0 +1,44 @@
+id: franka_fr3
+display_name: Franka FR3
+kind: arm
+license: Apache-2.0
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: franka_fr3
+  xml_file: fr3.xml
+  arm_joints:
+  - fr3_joint1
+  - fr3_joint2
+  - fr3_joint3
+  - fr3_joint4
+  - fr3_joint5
+  - fr3_joint6
+  - fr3_joint7
+  arm_actuators:
+  - fr3_joint1
+  - fr3_joint2
+  - fr3_joint3
+  - fr3_joint4
+  - fr3_joint5
+  - fr3_joint6
+  - fr3_joint7
+  ee_site: attachment_site
+  ee_body: fr3_link7
+  ee_offset_m:
+  - 0.0
+  - 0.0
+  - 0.107
+  home_qpos_rad:
+  - 0.0
+  - 0.0
+  - 0.0
+  - -1.57079
+  - 0.0
+  - 1.57079
+  - -0.7853
+  base_type: none
+real:
+  driver: null
+  sdk_package: null
+  notes: fr3.xml has no gripper. attachment_site sits 0.107 m along fr3_link7.

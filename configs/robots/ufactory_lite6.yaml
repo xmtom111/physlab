@@ -1,0 +1,32 @@
+id: ufactory_lite6
+display_name: UFACTORY Lite 6
+kind: arm
+license: BSD-3-Clause
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: ufactory_lite6
+  xml_file: lite6.xml
+  arm_joints:
+  - joint1
+  - joint2
+  - joint3
+  - joint4
+  - joint5
+  - joint6
+  arm_actuators: []
+  ee_site: attachment_site
+  ee_body: link6
+  home_qpos_rad:
+  - 0.0
+  - 0.0
+  - 1.57
+  - 0.0
+  - 1.57
+  - 0.0
+  base_type: none
+real:
+  driver: null
+  sdk_package: null
+  notes: lite6.xml position actuators have no name attribute, so arm_actuators is
+    empty. This file is the no-gripper variant.

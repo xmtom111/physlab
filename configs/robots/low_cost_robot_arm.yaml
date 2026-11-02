@@ -1,0 +1,44 @@
+id: low_cost_robot_arm
+display_name: Low-cost robot arm
+kind: arm
+license: Apache-2.0
+available: true
+sim:
+  source: menagerie
+  menagerie_dir: low_cost_robot_arm
+  xml_file: low_cost_robot_arm.xml
+  arm_joints:
+  - base_rotation
+  - pitch
+  - elbow
+  - wrist_pitch
+  - wrist_roll
+  arm_actuators:
+  - base_rotation
+  - pitch
+  - elbow
+  - wrist_pitch
+  - wrist_roll
+  ee_body: gripper_static_finger
+  home_qpos_rad:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  gripper:
+    actuator: gripper
+    open_ctrl: 0.032
+    closed_ctrl: -1.6
+    finger_geoms:
+    - gripper_static_finger_pad_1
+    - gripper_static_finger_pad_3
+    - gripper_moving_finger_pad_1
+    - gripper_moving_finger_pad_3
+    attach_from: null
+  base_type: none
+real:
+  driver: null
+  sdk_package: null
+  notes: Gripper position actuator ctrlrange is -1.60 to 0.032. open_ctrl is the upper
+    endpoint.

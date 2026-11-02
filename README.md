@@ -40,7 +40,11 @@ extra file removed. The OpenGL sources are unchanged.
 ```bash
 uv run physlab --version
 uv run physlab config show
+uv run physlab assets fetch
+uv run physlab robots list
+uv run physlab robots check --all
 uv run python examples/01_core_poses.py
+uv run python examples/02_list_and_check_robots.py
 ```
 
 `physlab --version` prints `0.1.0`. `physlab config show` prints the YAML

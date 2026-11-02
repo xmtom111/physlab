@@ -14,3 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `PHYSLAB_` environment overrides, structlog setup, JSONL event log, and a typed registry.
 - Command line entry points `physlab --version` and `physlab config show`.
 - Vendored PyOpenGL 3.1.0 wheel with the stray egg-info file removed so `uv run` can sync.
+- MuJoCo Menagerie fetch (`physlab assets fetch`) and a robot catalog for the
+  listed arms, mobile platforms, and procedural diff-drive and gantry
+  (`physlab robots list`, `physlab robots check`).
