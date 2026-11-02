@@ -4,11 +4,12 @@ physlab is a Python framework for running a lab from code: robot arms and mobile
 bases, fabricated parts, assembly, and physics or chemistry experiments. The same
 interfaces target MuJoCo first and real hardware later.
 
-This release has the core layer, the robot catalog, and a MuJoCo simulation
-backend. Frames, poses, configuration, logging, the event log, a typed
-registry, and the `physlab` command are implemented. The hardware protocols
-are implemented in simulation, including joint-space motion to a pose.
-Perception, fabrication, and real hardware backends come later.
+This release has the core layer, the robot catalog, a MuJoCo simulation
+backend, and the first experiment loop. Frames, poses, configuration,
+logging, the event log, a typed registry, and the `physlab` command are
+implemented. The hardware protocols are implemented in simulation, including
+joint-space motion to a pose. Perception and fabrication run in simulation.
+Real hardware backends come later.
 
 ## Requirements
 
@@ -54,6 +55,7 @@ uv run python examples/05_locate_markers.py
 uv run python examples/06_print_and_pick.py
 uv run python examples/07_assemble_microscope.py
 uv run python examples/08_controller_debug_loop.py
+uv run python examples/09_pendulum_law.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -106,6 +108,8 @@ the backend that actually renders.
 - `docs/assembly.md` — plans, pick/place, fastening, and focus screws
 - `docs/optics.md` — paraxial helpers and the simulated microscope
 - `docs/controllers.md` — controller API, the AST guardrail, and the process sandbox
+- `docs/experiments.md` — protocols, fitting, and the pendulum, incline, and lens runs
+- `examples/09_pendulum_law.py` — period versus length, with a Markdown report
 - `examples/08_controller_debug_loop.py` — debug a focus controller from its summary
 - `examples/06_print_and_pick.py` — mock-print a lens holder and pick it up
 - `examples/07_assemble_microscope.py` — assemble and focus the microscope

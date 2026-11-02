@@ -53,3 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and then the corrected one. MicroPython generation is out of scope;
   `arduino-cli` compile and upload wrappers raise `DependencyMissing`
   when the CLI is absent.
+- Experiments: protocols, a skill registry, a factorial runner that keeps
+  failed trials, six curve fits scored by AIC, a safe expression parser,
+  and a Markdown report. Library runs E1 (pendulum), E2 (incline), and
+  E3 (thin lens). `examples/09_pendulum_law.py` writes the pendulum report.
