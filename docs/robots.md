@@ -60,8 +60,12 @@ checked for `generic_diffdrive` with `trs_so_arm100` and with `ufactory_xarm7`.
 ## Procedural models
 
 `generic_diffdrive` is a 0.40 x 0.30 x 0.12 m box (MuJoCo geom size is the
-half-extent), two wheels of radius 0.05 m with velocity actuators, one passive
-caster ball, and a `mount` site on the top center.
+half-extent), two wheels of radius 0.05 m, one passive caster ball, and a
+`mount` site on the top center. Wheel collision is a sphere on a 0.41 m track
+so the wheel does not interpenetrate the chassis; the cylinder is visual only.
+The velocity actuator gain is 1. The scene builder adds a free joint on the
+anchor when this base is placed, so the catalog joint list stays the two
+wheels plus the caster.
 
 `gantry_xyz` is three prismatic joints with travel 0.5 m, 0.5 m, and 0.3 m,
 position actuators, and a `tool` site.

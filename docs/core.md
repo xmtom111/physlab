@@ -53,6 +53,8 @@ normalized on input and a zero norm raises `PhysLabError`.
 `load_config(path=None)` reads YAML, applies `PHYSLAB_` overrides, and returns
 absolute paths. Nested overrides use `__`, for example
 `PHYSLAB_SIM__TIMESTEP_S`. `sim.gl_backend` is `egl`, `osmesa`, or `glfw`.
+`sim.viewer` defaults to false. A passive MuJoCo viewer is opened only when
+that flag is true and `DISPLAY` is set.
 
 `configure_logging(level, json)` configures structlog for the process. Pass
 `json=True` for one JSON object per line. `get_logger(name)` binds `logger`

@@ -84,6 +84,8 @@ class SimSpec(BaseModel):
         base_joints: Driven base joints.
         base_actuators: Actuators for ``base_joints``.
         mount_site: Site where an arm can be attached.
+        joint_velocity_max_rad_s: Per-joint speed limits for ``arm_joints``,
+            radians per second. Missing entries default to 1.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
@@ -103,6 +105,7 @@ class SimSpec(BaseModel):
     base_joints: tuple[str, ...] = ()
     base_actuators: tuple[str, ...] = ()
     mount_site: str | None = None
+    joint_velocity_max_rad_s: tuple[float, ...] = ()
 
 
 class RealSpec(BaseModel):

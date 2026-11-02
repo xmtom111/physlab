@@ -278,23 +278,35 @@ def _build_diffdrive() -> mujoco.MjSpec:
         size=[0.20, 0.15, 0.06],
     )
     chassis.add_site(name="mount", pos=[0.0, 0.0, 0.06], size=[0.01, 0.01, 0.01])
-    _wheel(spec, chassis, "left_wheel", 0.15)
-    _wheel(spec, chassis, "right_wheel", -0.15)
-    caster = chassis.add_body(name="caster", pos=[-0.12, 0.0, -0.04])
+    # Sphere collision sits outside the chassis. A horizontal cylinder contact
+    # is unstable in MuJoCo, and a disk embedded in the body locks the joint.
+    _wheel(spec, chassis, "left_wheel", 0.205)
+    _wheel(spec, chassis, "right_wheel", -0.205)
+    caster = chassis.add_body(name="caster", pos=[-0.12, 0.0, -0.09])
     caster.add_joint(name="caster_ball", type=mujoco.mjtJoint.mjJNT_BALL)
     caster.add_geom(name="caster_geom", type=mujoco.mjtGeom.mjGEOM_SPHERE, size=[0.02, 0.0, 0.0])
     return spec
 
 
 def _wheel(spec: mujoco.MjSpec, chassis: mujoco.MjsBody, name: str, y_m: float) -> None:
-    # Radius 0.05 m. The cylinder axis is rotated from z to y.
+    # Radius 0.05 m. Collision is a sphere; the cylinder is visual only.
     wheel = chassis.add_body(name=name, pos=[0.0, y_m, -0.06])
     wheel.add_joint(name=name, type=mujoco.mjtJoint.mjJNT_HINGE, axis=[0.0, 1.0, 0.0])
     wheel.add_geom(
         name=f"{name}_geom",
+        type=mujoco.mjtGeom.mjGEOM_SPHERE,
+        size=[0.05, 0.0, 0.0],
+        friction=[1.0, 0.005, 0.0001],
+    )
+    wheel.add_geom(
+        name=f"{name}_visual",
         type=mujoco.mjtGeom.mjGEOM_CYLINDER,
         size=[0.05, 0.01, 0.0],
         quat=[0.7071067811865476, 0.7071067811865476, 0.0, 0.0],
+        contype=0,
+        conaffinity=0,
+        mass=0.0,
+        density=0.0,
     )
     _velocity_actuator(spec, f"{name}_vel", name)
 
@@ -328,7 +340,8 @@ def _slide(body: mujoco.MjsBody, name: str, axis: list[float], travel_m: float) 
 
 
 def _velocity_actuator(spec: mujoco.MjSpec, name: str, joint: str) -> None:
-    # Matches a MJCF ``<velocity kv="10" ctrlrange="-20 20"/>`` expansion.
+    # A MJCF velocity actuator expands to gainprm [kv, 0, 0] and biasprm [0, 0, -kv].
+    # kv 10 makes the light wheel contact solver unstable, so the gain is 1.
     spec.add_actuator(
         name=name,
         type=mujoco.mjtActuator.mjACTUATOR_VELOCITY,
@@ -336,8 +349,8 @@ def _velocity_actuator(spec: mujoco.MjSpec, name: str, joint: str) -> None:
         trntype=mujoco.mjtTrn.mjTRN_JOINT,
         gaintype=mujoco.mjtGain.mjGAIN_AFFINE,
         biastype=mujoco.mjtBias.mjBIAS_AFFINE,
-        gainprm=_pad([10.0]),
-        biasprm=_pad([0.0, 0.0, -10.0]),
+        gainprm=_pad([1.0]),
+        biasprm=_pad([0.0, 0.0, -1.0]),
         ctrllimited=1,
         ctrlrange=[-20.0, 20.0],
     )

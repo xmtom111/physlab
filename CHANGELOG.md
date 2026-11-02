@@ -17,3 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MuJoCo Menagerie fetch (`physlab assets fetch`) and a robot catalog for the
   listed arms, mobile platforms, and procedural diff-drive and gantry
   (`physlab robots list`, `physlab robots check`).
+- Hardware protocols for an arm, gripper, mobile base, and camera, plus a
+  MuJoCo scene builder, stepping world, and simulation backends. Joint motion
+  uses a minimum-jerk path. `move_pose` raises `NotImplementedError` until
+  inverse kinematics. `examples/03_sim_arm_joints.py` and
+  `examples/03b_sim_mobile_base.py` record MP4s.
+- `SimConfig.viewer` and `SimSpec.joint_velocity_max_rad_s`. Both default so
+  existing YAML still loads. An empty velocity tuple means 1.0 rad/s per joint.

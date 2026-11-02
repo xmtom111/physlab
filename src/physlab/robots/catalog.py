@@ -49,6 +49,15 @@ class RobotCatalog:
         self._assets_dir = assets_dir
         self._robots = _load_dir(configs_dir / "robots")
 
+    @property
+    def assets_dir(self) -> Path:
+        """Directory that contains ``mujoco_menagerie``.
+
+        Returns:
+            The assets directory passed to the constructor.
+        """
+        return self._assets_dir
+
     def list(self) -> list[RobotSpec]:
         """Return every robot, sorted by id.
 

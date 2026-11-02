@@ -39,6 +39,7 @@ class SimConfig(BaseModel):
         render_height: Offscreen framebuffer height, pixels.
         gl_backend: Renderer. ``egl`` is the headless default; use ``osmesa``
             when EGL is unavailable.
+        viewer: Open a passive viewer when true and a display is available.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
@@ -47,6 +48,7 @@ class SimConfig(BaseModel):
     render_width: int = Field(default=640, gt=0)
     render_height: int = Field(default=480, gt=0)
     gl_backend: GlBackend = GlBackend.EGL
+    viewer: bool = False
 
 
 class PhysLabConfig(BaseModel):

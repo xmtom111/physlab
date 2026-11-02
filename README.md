@@ -4,10 +4,11 @@ physlab is a Python framework for running a lab from code: robot arms and mobile
 bases, fabricated parts, assembly, and physics or chemistry experiments. The same
 interfaces target MuJoCo first and real hardware later.
 
-This release is the core layer only. Frames, poses, configuration, logging, the
-event log, a typed registry, and the `physlab` command are implemented. Robot
-models, simulation, motion, perception, fabrication, and hardware backends are
-packages reserved for later work.
+This release has the core layer, the robot catalog, and a MuJoCo simulation
+backend. Frames, poses, configuration, logging, the event log, a typed
+registry, and the `physlab` command are implemented. The hardware protocols
+are implemented in simulation. Pose goals, perception, fabrication, and real
+hardware backends come later.
 
 ## Requirements
 
@@ -45,7 +46,14 @@ uv run physlab robots list
 uv run physlab robots check --all
 uv run python examples/01_core_poses.py
 uv run python examples/02_list_and_check_robots.py
+MUJOCO_GL=egl uv run python examples/03_sim_arm_joints.py
+MUJOCO_GL=egl uv run python examples/03b_sim_mobile_base.py
 ```
+
+If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
+simulation code tries EGL first and falls back to OSMesa on its own when
+`MUJOCO_GL` is unset. The videos are written under `run_dir` (default
+`runs/`).
 
 `physlab --version` prints `0.1.0`. `physlab config show` prints the YAML
 configuration after `PHYSLAB_` environment overrides. Relative paths in
@@ -69,17 +77,24 @@ export MUJOCO_GL=osmesa
 ```
 
 `configs/default.yaml` stores the same choice in `sim.gl_backend` (`egl`,
-`osmesa`, or `glfw`). Nothing in this release opens a window or a GL context.
+`osmesa`, or `glfw`). Offscreen rendering uses that fallback. A window opens
+only when `sim.viewer` is true and a display is available. The vendored
+PyOpenGL 3.1.0 wheel has no `EGLDeviceEXT`, so EGL fails here and OSMesa is
+the backend that actually renders.
 
 ## Layout
 
 - `src/physlab/core` — frames, types, errors, config, logging, events, registry
+- `src/physlab/robots` — Menagerie fetch, catalog, and composition
+- `src/physlab/hal` — arm, gripper, base, and camera protocols
+- `src/physlab/sim` — MuJoCo scene, world, backends, and MP4 recorder
 - `src/physlab/cli.py` — command line
 - `configs/default.yaml` — default configuration
 - `examples/01_core_poses.py` — pose composition demo
+- `examples/03_sim_arm_joints.py` — joint motion and an MP4
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
-Other packages under `src/physlab` are empty on purpose.
+Motion, perception, fabrication, and real-hardware packages are still empty.
 
 ## Checks
 
