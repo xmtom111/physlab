@@ -8,9 +8,11 @@ table.
 from __future__ import annotations
 
 import itertools
+from collections.abc import Sequence
 
 import numpy as np
 
+from physlab.chem.virtual_lab import ChemReading
 from physlab.core.errors import ConfigError, PhysLabError
 from physlab.core.events import Actor, EventLog
 from physlab.experiments.protocol import ExperimentProtocol, validate_protocol
@@ -77,6 +79,79 @@ class ExperimentRunner:
             hypothesis=protocol.hypothesis,
             trials=trials,
         )
+
+    def run_chem(
+        self,
+        protocol: object,
+        *,
+        question: str,
+        hypothesis: str,
+        seed: int = 0,
+        analyte: str = "food_dye",
+    ) -> RunResult:
+        """Run a chemistry protocol and store one trial per reading.
+
+        Args:
+            protocol: A :class:`physlab.chem.protocol.ChemProtocol`. Typed as
+                ``object`` here so importing the runner does not load the
+                chemistry stack until a chem trial is requested.
+            question: Stored on the run result for the report.
+            hypothesis: Stored on the run result for the report.
+            seed: Plate-reader seed. The pH probe uses ``seed + 1``.
+            analyte: Species recorded as ``concentration_m``.
+
+        Returns:
+            Trials whose measurements are absorbance or pH. ``fit_models``
+            can take the resulting table.
+
+        Raises:
+            ConfigError: Volumes or tips do not fit.
+            SafetyViolation: The reagent allowlist denies the protocol.
+        """
+        from physlab.chem.protocol import ChemProtocol
+        from physlab.chem.virtual_lab import VirtualChemLab
+
+        if not isinstance(protocol, ChemProtocol):
+            raise ConfigError("run_chem requires a ChemProtocol")
+        directory = self.event_log.path.parent
+        (directory / "media").mkdir(parents=True, exist_ok=True)
+        text = protocol.model_dump_json(indent=2)
+        (directory / "protocol.json").write_text(text, encoding="utf-8")
+        readings = VirtualChemLab(seed=seed, analyte=analyte).execute(protocol)
+        trials = _chem_trials(readings)
+        write_trials(directory, trials)
+        self.event_log.record(
+            Actor.SYSTEM,
+            "chem_protocol",
+            params={"protocol_id": protocol.id, "seed": seed},
+            result={"trials": len(trials)},
+        )
+        return RunResult(
+            run_id=self.event_log.run_id,
+            directory=directory,
+            protocol_id=protocol.id,
+            question=question,
+            hypothesis=hypothesis,
+            trials=trials,
+        )
+
+
+def _chem_trials(readings: Sequence[ChemReading]) -> list[TrialRecord]:
+    trials: list[TrialRecord] = []
+    for index, reading in enumerate(readings):
+        if not isinstance(reading, ChemReading):
+            continue
+        trials.append(
+            TrialRecord(
+                order=index,
+                repetition=0,
+                values=dict(reading.values),
+                measurements=dict(reading.measurements),
+                success=True,
+                reason="",
+            )
+        )
+    return trials
 
 
 def _default_skills() -> SkillRegistry:

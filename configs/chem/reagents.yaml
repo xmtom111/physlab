@@ -1,4 +1,81 @@
 # Human-maintained reagent allowlist.
-# Agents must not edit this file. The entry schema arrives with the chemistry
-# stack (T10). Until then the allowlist is empty, so no reagent is permitted.
-{}
+# No physlab code path may write this file. Agents must not edit it.
+# T10 schema: only the six reagents below are permitted.
+max_temp_c: 40.0
+path_cm: 1.0
+kinetics: []
+reagents:
+  water:
+    name: water
+    cas: "7732-18-5"
+    hazard_codes: []
+    hazard_class: none
+    max_concentration_m: 55.5
+    max_total_volume_ml: 100.0
+    incompatible_classes: []
+    strong_base: false
+    ka: null
+    epsilon_l_mol_cm: {}
+  food_dye:
+    name: food dye
+    cas: generic
+    hazard_codes: []
+    hazard_class: dye
+    max_concentration_m: 0.01
+    max_total_volume_ml: 50.0
+    incompatible_classes:
+      - strong_base
+    strong_base: false
+    ka: null
+    epsilon_l_mol_cm:
+      520: 15000.0
+  sodium_chloride:
+    name: sodium chloride
+    cas: "7647-14-5"
+    hazard_codes: []
+    hazard_class: salt
+    max_concentration_m: 5.0
+    max_total_volume_ml: 50.0
+    incompatible_classes: []
+    strong_base: false
+    ka: null
+    epsilon_l_mol_cm: {}
+  acetic_acid:
+    name: acetic acid
+    cas: "64-19-7"
+    hazard_codes:
+      - H315
+      - H319
+    hazard_class: weak_acid
+    max_concentration_m: 1.0
+    max_total_volume_ml: 50.0
+    incompatible_classes: []
+    strong_base: false
+    ka: 1.8e-5
+    epsilon_l_mol_cm: {}
+  sodium_hydroxide:
+    name: sodium hydroxide
+    cas: "1310-73-2"
+    hazard_codes:
+      - H315
+      - H319
+    hazard_class: strong_base
+    max_concentration_m: 0.1
+    max_total_volume_ml: 50.0
+    incompatible_classes:
+      - dye
+    strong_base: true
+    ka: null
+    epsilon_l_mol_cm: {}
+  phenolphthalein:
+    name: phenolphthalein indicator solution
+    cas: "77-09-8"
+    hazard_codes:
+      - H341
+    hazard_class: indicator
+    max_concentration_m: 0.001
+    max_total_volume_ml: 10.0
+    incompatible_classes: []
+    strong_base: false
+    ka: null
+    epsilon_l_mol_cm: {}

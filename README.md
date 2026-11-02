@@ -56,6 +56,8 @@ uv run python examples/06_print_and_pick.py
 uv run python examples/07_assemble_microscope.py
 uv run python examples/08_controller_debug_loop.py
 uv run python examples/09_pendulum_law.py
+uv run python examples/10_dye_calibration_curve.py
+uv run python examples/10b_titration_curve.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -109,6 +111,9 @@ the backend that actually renders.
 - `docs/optics.md` — paraxial helpers and the simulated microscope
 - `docs/controllers.md` — controller API, the AST guardrail, and the process sandbox
 - `docs/experiments.md` — protocols, fitting, and the pendulum, incline, and lens runs
+- `docs/chem.md` — reagent allowlist, virtual lab, and the verified Opentrons API
+- `examples/10_dye_calibration_curve.py` — Beer-Lambert calibration of food dye
+- `examples/10b_titration_curve.py` — acetic acid titration in simulation
 - `examples/09_pendulum_law.py` — period versus length, with a Markdown report
 - `examples/08_controller_debug_loop.py` — debug a focus controller from its summary
 - `examples/06_print_and_pick.py` — mock-print a lens holder and pick it up

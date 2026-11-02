@@ -57,3 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failed trials, six curve fits scored by AIC, a safe expression parser,
   and a Markdown report. Library runs E1 (pendulum), E2 (incline), and
   E3 (thin lens). `examples/09_pendulum_law.py` writes the pendulum report.
+- Chemistry: OT-2 labware, a read-only reagent allowlist, virtual dilution,
+  weak-acid charge balance, Beer-Lambert, and seeded instrument noise.
+  `ExperimentRunner.run_chem` records those readings.
+  `examples/10_dye_calibration_curve.py` and
+  `examples/10b_titration_curve.py` run in simulation. Opentrons protocol
+  text targets API level 2.28, and the HTTP client uses the documented
+  port 31950 routes. The client is tested with `httpx.MockTransport` only.
