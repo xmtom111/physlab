@@ -20,7 +20,7 @@ from physlab.core.logging import get_logger
 from physlab.core.types import Pose
 from physlab.hal.interfaces import Contact
 from physlab.robots.catalog import RobotCatalog
-from physlab.sim.scene import ObjectSpec, SceneSpec, _add_object, build_mjspec
+from physlab.sim.scene import ObjectSpec, SceneSpec, _add_object, build_mjspec, placed_spec
 
 _logger = get_logger(__name__)
 
@@ -50,6 +50,7 @@ class SimWorld:
         self.data = mujoco.MjData(self.model)
         self._rng = np.random.default_rng(config.seed)
         self._welds: dict[tuple[str, str], str] = {}
+        self._kinematic_holds: list[Callable[[], None]] = []
         self._apply_initial_state()
         self._saved = _snapshot(self.model, self.data)
         self._viewer = _maybe_viewer(self)
@@ -68,6 +69,7 @@ class SimWorld:
         with self._lock:
             for _ in range(n):
                 mujoco.mj_step(self.model, self.data)
+                self._restore_holds()
             self._sync_viewer()
 
     def run_until(self, predicate: Callable[[SimWorld], bool], timeout_s: float) -> bool:
@@ -104,6 +106,10 @@ class SimWorld:
             mujoco.mj_resetData(self.model, self.data)
             _restore(self.model, self.data, self._saved)
             mujoco.mj_forward(self.model, self.data)
+            for hold in self._kinematic_holds:
+                recapture = getattr(hold, "recapture", None)
+                if recapture is not None:
+                    recapture()
 
     @property
     def time_s(self) -> float:
@@ -325,7 +331,7 @@ class SimWorld:
 
     def _apply_initial_state(self) -> None:
         for placement in self.scene.robots:
-            robot = self.catalog.get(placement.robot_id)
+            robot = placed_spec(self.catalog, placement)
             pairs = zip(robot.sim.arm_joints, robot.sim.home_qpos_rad, strict=False)
             for joint_name, value in pairs:
                 full = f"{placement.instance}/{joint_name}"
@@ -367,6 +373,10 @@ class SimWorld:
         if actuator_id < 0:
             raise ConfigError("Actuator was not found", details={"actuator": name})
         return actuator_id
+
+    def _restore_holds(self) -> None:
+        for hold in self._kinematic_holds:
+            hold()
 
     def _sync_viewer(self) -> None:
         if self._viewer is not None:

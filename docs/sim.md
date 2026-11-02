@@ -24,6 +24,10 @@ joint is not part of the catalog.
 (`attached_to_body`). The offscreen framebuffer is at least 640 by 480 and at
 least as large as the largest camera.
 
+`RobotPlacement.arm_id`, when set, mounts that catalog arm on the base's
+mount site before the combined model is placed. Joint names keep the
+instance prefix.
+
 ## World
 
 `SimWorld(scene, catalog, config)` owns the compiled `MjModel`, `MjData`, and
@@ -96,7 +100,7 @@ under the configured `run_dir`.
 
 ## Limitations
 
-- `move_pose` is not implemented.
+- `move_pose` plans in joint space. See `docs/motion.md`.
 - Differential drive is kinematic on the anchor free joint. Wheel `ctrl` is
   written, but the actuator gain is zeroed so the contact solver does not
   diverge.

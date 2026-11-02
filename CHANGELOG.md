@@ -24,3 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `examples/03b_sim_mobile_base.py` record MP4s.
 - `SimConfig.viewer` and `SimSpec.joint_velocity_max_rad_s`. Both default so
   existing YAML still loads. An empty velocity tuple means 1.0 rad/s per joint.
+- Motion layer: mink inverse kinematics, joint-space planning (straight line
+  or RRT-Connect), trapezoidal time scaling, `SimArm.move_pose`, and the
+  transit, approach, retreat, and navigate-and-reach skills.
+  `examples/04_pick_cube.py` and `examples/04b_mobile_pick.py` run seeds 0
+  through 4.

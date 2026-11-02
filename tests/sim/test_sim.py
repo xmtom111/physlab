@@ -219,8 +219,13 @@ def test_xarm_prefixed_and_joint_motion(tmp_path: Path) -> None:
         arm.move_joints([0.0])
     limited = arm.move_joints((0.0, 3.0, 0.0, 0.9, 0.0, 1.0, 0.0))
     assert limited.reason is FailureReason.JOINT_LIMIT
-    with pytest.raises(NotImplementedError, match="Implemented in T4"):
-        arm.move_pose(_pose())
+    pose = arm.get_ee_pose()
+    nudged = Pose(
+        position_m=(pose.position_m[0] + 0.02, pose.position_m[1], pose.position_m[2]),
+        quat_wxyz=pose.quat_wxyz,
+    )
+    moved_pose = arm.move_pose(nudged, speed_scale=1.0, timeout_s=8.0)
+    assert moved_pose.success, moved_pose.message
     arm.stop()
 
 

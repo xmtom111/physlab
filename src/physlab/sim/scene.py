@@ -17,8 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from physlab.core.errors import AssetMissing, ConfigError
 from physlab.core.types import Pose
 from physlab.robots.catalog import RobotCatalog
-from physlab.robots.compose import load_robot_spec
-from physlab.robots.models import BaseType
+from physlab.robots.compose import compose_mobile_manipulator, load_robot_spec
+from physlab.robots.models import BaseType, RobotSpec
 
 _GEOM = {
     "box": mujoco.mjtGeom.mjGEOM_BOX,
@@ -77,9 +77,10 @@ class RobotPlacement(BaseModel):
     """Where one catalog robot is instantiated.
 
     Attributes:
-        robot_id: Catalog id.
+        robot_id: Catalog id. This is the base when ``arm_id`` is set.
         instance: Prefix applied to every element of this robot.
         base_pose: Pose of the robot anchor in the world frame.
+        arm_id: Arm catalog id mounted on ``robot_id``'s mount site, or ``None``.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
@@ -87,6 +88,7 @@ class RobotPlacement(BaseModel):
     robot_id: str
     instance: str
     base_pose: Pose
+    arm_id: str | None = None
 
 
 class ObjectSpec(BaseModel):
@@ -234,9 +236,48 @@ def _add_table(spec: mujoco.MjSpec, table: TableSpec) -> None:
     )
 
 
+_COMPOSED: dict[tuple[str, str, str], RobotSpec] = {}
+
+
+def placed_spec(catalog: RobotCatalog, placement: RobotPlacement) -> RobotSpec:
+    """Return the spec for a placement, composing a mounted arm when requested.
+
+    Args:
+        catalog: Robot catalog.
+        placement: Where the robot sits. ``arm_id`` mounts that arm on the base.
+
+    Returns:
+        The base spec, or the composed mobile-manipulator spec.
+    """
+    if placement.arm_id is None:
+        return catalog.get(placement.robot_id)
+    key = (placement.robot_id, placement.arm_id, str(catalog.assets_dir))
+    cached = _COMPOSED.get(key)
+    if cached is not None:
+        return cached
+    base = catalog.get(placement.robot_id)
+    arm = catalog.get(placement.arm_id)
+    composed, _model = compose_mobile_manipulator(
+        base,
+        arm,
+        f"{base.id}__{arm.id}",
+        catalog.assets_dir,
+    )
+    _COMPOSED[key] = composed
+    return composed
+
+
 def _add_robot(spec: mujoco.MjSpec, catalog: RobotCatalog, placement: RobotPlacement) -> None:
-    robot = catalog.get(placement.robot_id)
-    child = load_robot_spec(robot, catalog.assets_dir)
+    if placement.arm_id is None:
+        robot = catalog.get(placement.robot_id)
+        child = load_robot_spec(robot, catalog.assets_dir)
+    else:
+        robot, child = compose_mobile_manipulator(
+            catalog.get(placement.robot_id),
+            catalog.get(placement.arm_id),
+            f"{placement.robot_id}__{placement.arm_id}",
+            catalog.assets_dir,
+        )
     anchor = spec.worldbody.add_body(
         name=f"{placement.instance}_anchor",
         pos=list(placement.base_pose.position_m),

@@ -7,8 +7,8 @@ interfaces target MuJoCo first and real hardware later.
 This release has the core layer, the robot catalog, and a MuJoCo simulation
 backend. Frames, poses, configuration, logging, the event log, a typed
 registry, and the `physlab` command are implemented. The hardware protocols
-are implemented in simulation. Pose goals, perception, fabrication, and real
-hardware backends come later.
+are implemented in simulation, including joint-space motion to a pose.
+Perception, fabrication, and real hardware backends come later.
 
 ## Requirements
 
@@ -48,6 +48,8 @@ uv run python examples/01_core_poses.py
 uv run python examples/02_list_and_check_robots.py
 MUJOCO_GL=egl uv run python examples/03_sim_arm_joints.py
 MUJOCO_GL=egl uv run python examples/03b_sim_mobile_base.py
+uv run python examples/04_pick_cube.py
+uv run python examples/04b_mobile_pick.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -92,6 +94,8 @@ the backend that actually renders.
 - `configs/default.yaml` — default configuration
 - `examples/01_core_poses.py` — pose composition demo
 - `examples/03_sim_arm_joints.py` — joint motion and an MP4
+- `examples/04_pick_cube.py` — xArm7 pick and place
+- `docs/motion.md` — inverse kinematics and planning
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
 Motion, perception, fabrication, and real-hardware packages are still empty.

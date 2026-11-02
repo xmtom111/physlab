@@ -5,7 +5,7 @@ from __future__ import annotations
 from physlab.core.errors import ConfigError
 from physlab.hal.interfaces import Camera, Robot
 from physlab.sim.backends import SimArm, SimCamera, SimGripper, SimMobileBase
-from physlab.sim.scene import CameraSpec
+from physlab.sim.scene import CameraSpec, placed_spec
 from physlab.sim.world import SimWorld
 
 
@@ -26,7 +26,7 @@ def create_robot(world: SimWorld, instance: str) -> Robot:
     placement = next((item for item in world.scene.robots if item.instance == instance), None)
     if placement is None:
         raise ConfigError("Robot instance is not in the scene", details={"instance": instance})
-    spec = world.catalog.get(placement.robot_id)
+    spec = placed_spec(world.catalog, placement)
     arm = SimArm(world, instance, spec) if spec.sim.arm_joints else None
     gripper = SimGripper(world, instance, spec) if spec.sim.gripper is not None else None
     base = SimMobileBase(world, instance, spec) if spec.sim.base_joints else None

@@ -9,9 +9,12 @@ from typing import Any
 import mujoco
 import numpy as np
 
-from physlab.core.errors import ConfigError
+from physlab.core.errors import ConfigError, PlanningFailed
 from physlab.core.types import FailureReason, JointState, MotionResult, Pose, Pose2D
 from physlab.hal.interfaces import CameraIntrinsics, Frame
+from physlab.motion.ik import IKResult, solve_ik
+from physlab.motion.planner import plan_joint_path
+from physlab.motion.trajectory import Trajectory, time_parameterize
 from physlab.robots.compose import RUNTIME_EE_SITE
 from physlab.robots.models import RobotSpec
 from physlab.sim.gl import renderer_class
@@ -110,18 +113,69 @@ class SimArm:
         speed_scale: float = 0.5,
         timeout_s: float = 10.0,
     ) -> MotionResult:
-        """Pose goals are implemented with inverse kinematics in T4.
+        """Move the end effector to ``target``.
+
+        The motion solves inverse kinematics, plans a joint path, time-scales
+        it, and tracks the trajectory.
 
         Args:
-            target: Desired end-effector pose. Unused.
-            speed_scale: Unused.
-            timeout_s: Unused.
+            target: Desired end-effector pose in the world frame.
+            speed_scale: Fraction of the joint velocity and acceleration limits.
+            timeout_s: Maximum simulated time, seconds.
+
+        Returns:
+            Success, or an IK, planning, collision, or timeout failure.
 
         Raises:
-            NotImplementedError: Always. Implemented in T4.
+            ConfigError: ``speed_scale`` is not positive.
         """
-        del target, speed_scale, timeout_s
-        raise NotImplementedError("Implemented in T4")
+        if speed_scale <= 0.0:
+            raise ConfigError("speed_scale must be positive", details={"speed_scale": speed_scale})
+        current = [self._world.joint_position(name) for name in self.joint_names]
+        solved = solve_ik(self._world, self.name, target, seed_q=current)
+        if not solved.success:
+            return _pose_failure(FailureReason.IK_FAILED, "inverse kinematics failed", solved)
+        try:
+            path = plan_joint_path(self._world, self.name, current, list(solved.q_rad))
+        except PlanningFailed as exc:
+            return _pose_failure(FailureReason.PLANNING_FAILED, exc.message, solved)
+        limits = self._limits
+        trajectory = time_parameterize(path, limits, [4.0] * self.dof, speed_scale)
+        return self._execute_trajectory(trajectory, target, timeout_s)
+
+    def _execute_trajectory(
+        self,
+        trajectory: Trajectory,
+        target: Pose,
+        timeout_s: float,
+    ) -> MotionResult:
+        world = self._world
+        t0 = world.time_s
+        initial = _external_pairs(world, self.name)
+        final = trajectory.sample(trajectory.duration_s).tolist()
+        while True:
+            elapsed = world.time_s - t0
+            if elapsed > timeout_s:
+                return _failed(FailureReason.TIMEOUT, "pose motion timed out", elapsed, self)
+            command = trajectory.sample(min(elapsed, trajectory.duration_s)).tolist()
+            self._write_ctrl(command)
+            world.step()
+            hit = _new_collision(world, self.name, self._finger_names(), initial)
+            if hit is not None:
+                return _failed(FailureReason.COLLISION, hit, world.time_s - t0, self)
+            if elapsed < trajectory.duration_s:
+                continue
+            position_m, rotation_rad = self.get_ee_pose().error_to(target)
+            pose_ok = position_m <= 5e-3 and rotation_rad <= 0.05
+            held = _settled(self, final) or elapsed >= trajectory.duration_s + 0.4
+            if held and (pose_ok or _settled(self, final)):
+                return MotionResult(
+                    success=True,
+                    reason=None,
+                    final_pos_error_m=position_m,
+                    final_rot_error_rad=rotation_rad,
+                    duration_s=world.time_s - t0,
+                )
 
     def stop(self) -> None:
         """Hold the current joint position, including a gravity trim."""
@@ -296,11 +350,15 @@ class SimMobileBase:
         self._joints = tuple(f"{instance}/{name}" for name in spec.sim.base_joints)
         self._actuators = tuple(f"{instance}/{name}" for name in spec.sim.base_actuators)
         self._free_joint = f"{instance}_base_free"
+        self._base_height: float | None = None
+        self._held: tuple[float, float, float] | None = None
         if spec.sim.base_type.value == "diff_drive":
             # kv on the wheel actuators makes the contact solver diverge. The
             # base pose is integrated on the anchor free joint instead, and the
             # wheel commands are still written to ctrl.
             _zero_actuator_gain(world, self._actuators)
+            self._capture_hold()
+            world._kinematic_holds.append(_KinematicHold(self))
 
     def get_pose2d(self) -> Pose2D:
         """Return the chassis pose projected to the plane.
@@ -455,11 +513,21 @@ class SimMobileBase:
         x_m = pose.x_m + vx_m_s * cosine * dt
         y_m = pose.y_m + vx_m_s * sine * dt
         yaw = pose.yaw_rad + wz_rad_s * dt
+        self._held = (x_m, y_m, yaw)
         self._write_planar(x_m, y_m, yaw)
         self._spin_wheel(self._joints[0], left * dt)
         self._spin_wheel(self._joints[1], right * dt)
         self._world.step()
         self._write_planar(x_m, y_m, yaw)
+
+    def _capture_hold(self) -> None:
+        pose = self.get_pose2d()
+        self._held = (pose.x_m, pose.y_m, pose.yaw_rad)
+
+    def _restore_hold(self) -> None:
+        if self._held is None:
+            return
+        self._write_planar(*self._held)
 
     def _write_planar(self, x_m: float, y_m: float, yaw_rad: float) -> None:
         model = self._world.model
@@ -472,7 +540,9 @@ class SimMobileBase:
             )
         q_address = int(model.jnt_qposadr[joint_id])
         v_address = int(model.jnt_dofadr[joint_id])
-        height = float(data.qpos[q_address + 2])
+        if self._base_height is None:
+            self._base_height = float(data.qpos[q_address + 2])
+        height = self._base_height
         half = 0.5 * yaw_rad
         data.qpos[q_address : q_address + 7] = [
             x_m,
@@ -715,6 +785,9 @@ def _new_collision(
         other = _external_body(contact.body1, contact.body2, prefix)
         if other is None or other in grasped:
             continue
+        robot_body = contact.body2 if other == contact.body1 else contact.body1
+        if _is_base_body(robot_body, instance):
+            continue
         pair = _body_pair(contact.body1, contact.body2)
         if pair in initial:
             continue
@@ -741,6 +814,19 @@ def _grasped_bodies(world: SimWorld, prefix: str, fingers: set[str]) -> set[str]
     return touched_left & touched_right
 
 
+class _KinematicHold:
+    """Re-apply a diff-drive pose after each physics step."""
+
+    def __init__(self, base: SimMobileBase) -> None:
+        self._base = base
+
+    def __call__(self) -> None:
+        self._base._restore_hold()
+
+    def recapture(self) -> None:
+        self._base._capture_hold()
+
+
 def _zero_actuator_gain(world: SimWorld, actuators: tuple[str, ...]) -> None:
     for name in actuators:
         actuator_id = mujoco.mj_name2id(world.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
@@ -756,6 +842,11 @@ def _body_pair(body1: str, body2: str) -> tuple[str, str]:
     return (body2, body1)
 
 
+def _is_base_body(name: str, instance: str) -> bool:
+    parts = ("chassis", "left_wheel", "right_wheel", "caster")
+    return name == f"{instance}_anchor" or name in {f"{instance}/{part}" for part in parts}
+
+
 def _external_body(body1: str, body2: str, prefix: str) -> str | None:
     first = body1.startswith(prefix)
     second = body2.startswith(prefix)
@@ -764,6 +855,17 @@ def _external_body(body1: str, body2: str, prefix: str) -> str | None:
     if second and not first:
         return body1
     return None
+
+
+def _pose_failure(reason: FailureReason, message: str, solved: IKResult) -> MotionResult:
+    return MotionResult(
+        success=False,
+        reason=reason,
+        message=message,
+        final_pos_error_m=solved.pos_error_m,
+        final_rot_error_rad=solved.rot_error_rad,
+        duration_s=0.0,
+    )
 
 
 def _ok(duration_s: float, arm: SimArm, target: list[float]) -> MotionResult:
