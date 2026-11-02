@@ -20,9 +20,19 @@ from a robot is prefixed with `"{instance}/"`. A differential-drive placement
 also gets a free joint named `"{instance}_base_free"` on the anchor. That
 joint is not part of the catalog.
 
-`CameraSpec` is fixed in the world (`pose`) or bolted to a body
-(`attached_to_body`). The offscreen framebuffer is at least 640 by 480 and at
-least as large as the largest camera.
+`CameraSpec` is fixed in the world or bolted to a body. When
+`attached_to_body` is set, `pose` is the camera pose in that body. When it is
+unset, `pose` is the world pose. The offscreen framebuffer is at least 640 by
+480 and at least as large as the largest camera.
+
+`add_overhead_stereo` appends two downward cameras. `add_wrist_camera` appends
+a camera on `{instance}/{ee_body}` (default `link7`) that looks along the
+body +Z axis.
+
+An `ObjectSpec` with `aruco_id` set keeps the `{name}_aruco_{id}` site and
+also gets a thin non-colliding box on the top face. The box is textured with
+the marker PNG. `aruco_size_m` (default 0.03 m) is the black-border side of
+the marker, not the white quiet zone around it.
 
 `RobotPlacement.arm_id`, when set, mounts that catalog arm on the base's
 mount site before the combined model is placed. Joint names keep the

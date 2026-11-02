@@ -9,6 +9,8 @@ from physlab.sim.scene import (
     RobotPlacement,
     SceneSpec,
     TableSpec,
+    add_overhead_stereo,
+    add_wrist_camera,
     build_mjspec,
 )
 from physlab.sim.world import SimWorld
@@ -23,5 +25,7 @@ __all__ = [
     "SceneSpec",
     "SimWorld",
     "TableSpec",
+    "add_overhead_stereo",
+    "add_wrist_camera",
     "build_mjspec",
 ]

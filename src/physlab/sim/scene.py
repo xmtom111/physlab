@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from physlab.core.errors import AssetMissing, ConfigError
 from physlab.core.types import Pose
+from physlab.perception.aruco import marker_plate_png, plate_scale
 from physlab.robots.catalog import RobotCatalog
 from physlab.robots.compose import compose_mobile_manipulator, load_robot_spec
 from physlab.robots.models import BaseType, RobotSpec
@@ -102,7 +103,8 @@ class ObjectSpec(BaseModel):
         mass_kg: Total mass, kilograms.
         rgba: Color and alpha.
         free: True when the object gets a free joint.
-        aruco_id: Optional marker id stored on a site.
+        aruco_id: Optional marker id. A textured plate is added on the top face.
+        aruco_size_m: Outer side of that marker, including its black border, meters.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
@@ -115,6 +117,7 @@ class ObjectSpec(BaseModel):
     rgba: tuple[float, float, float, float] = (0.8, 0.4, 0.2, 1.0)
     free: bool = False
     aruco_id: int | None = None
+    aruco_size_m: float = Field(default=0.03, gt=0)
 
     @model_validator(mode="after")
     def _has_collision(self) -> ObjectSpec:
@@ -128,7 +131,8 @@ class CameraSpec(BaseModel):
 
     Attributes:
         name: Camera name.
-        pose: World pose. Ignored when ``attached_to_body`` is set.
+        pose: World pose when the camera is fixed. Local pose in the body when
+            ``attached_to_body`` is set.
         attached_to_body: Body the camera is fixed to, or ``None``.
         fovy_deg: Vertical field of view, degrees.
         width: Image width, pixels.
@@ -305,6 +309,7 @@ def _add_object(spec: mujoco.MjSpec, obj: ObjectSpec) -> None:
         _add_visual_mesh(spec, body, obj)
     if obj.aruco_id is not None:
         body.add_site(name=f"{obj.name}_aruco_{obj.aruco_id}", size=[0.005, 0.005, 0.005])
+        _add_aruco_plate(spec, body, obj)
 
 
 def _add_primitive(
@@ -363,7 +368,13 @@ def _add_camera(spec: mujoco.MjSpec, camera: CameraSpec) -> None:
                 "Camera body was not found",
                 details={"camera": camera.name, "body": camera.attached_to_body},
             )
-        body.add_camera(name=camera.name, fovy=camera.fovy_deg)
+        local = camera.pose
+        body.add_camera(
+            name=camera.name,
+            fovy=camera.fovy_deg,
+            pos=list(local.position_m) if local is not None else [0.0, 0.0, 0.0],
+            quat=list(local.quat_wxyz) if local is not None else [1.0, 0.0, 0.0, 0.0],
+        )
         return
     pose = camera.pose
     if pose is None:
@@ -374,6 +385,113 @@ def _add_camera(spec: mujoco.MjSpec, camera: CameraSpec) -> None:
         quat=list(pose.quat_wxyz),
         fovy=camera.fovy_deg,
     )
+
+
+def add_overhead_stereo(
+    scene: SceneSpec,
+    height_m: float = 1.0,
+    baseline_m: float = 0.4,
+    width: int = 1280,
+    height: int = 720,
+) -> None:
+    """Add two downward cameras separated by ``baseline_m``.
+
+    They sit at ``z = height_m`` and look straight down, so a marker on the
+    table near the origin is seen by both.
+
+    Args:
+        scene: Scene that receives the cameras.
+        height_m: Camera height, meters.
+        baseline_m: Distance between the cameras along Y, meters.
+        width: Image width, pixels.
+        height: Image height, pixels.
+    """
+    offset = baseline_m / 2.0
+    for name, y_m in (("overhead_left", -offset), ("overhead_right", offset)):
+        scene.cameras.append(
+            CameraSpec(
+                name=name,
+                pose=Pose(position_m=(0.0, y_m, height_m), quat_wxyz=(1.0, 0.0, 0.0, 0.0)),
+                fovy_deg=50.0,
+                width=width,
+                height=height,
+            )
+        )
+
+
+def add_wrist_camera(scene: SceneSpec, instance: str, ee_body: str = "link7") -> None:
+    """Add a camera on ``instance``'s end-effector body.
+
+    The camera sits 5 cm along the body Z axis and looks along that axis.
+    MuJoCo cameras look along -Z, so the local frame is rotated 180 degrees
+    about X.
+
+    Args:
+        scene: Scene that receives the camera.
+        instance: Robot placement prefix.
+        ee_body: Body name inside the prefixed robot. xArm7's last link is
+            ``link7``.
+    """
+    scene.cameras.append(
+        CameraSpec(
+            name=f"{instance}_wrist",
+            attached_to_body=f"{instance}/{ee_body}",
+            pose=Pose(
+                position_m=(0.0, 0.0, 0.05),
+                quat_wxyz=(0.0, 1.0, 0.0, 0.0),
+                frame="body",
+            ),
+            fovy_deg=60.0,
+            width=640,
+            height=480,
+        )
+    )
+
+
+def _add_aruco_plate(spec: mujoco.MjSpec, body: mujoco.MjsBody, obj: ObjectSpec) -> None:
+    if obj.aruco_id is None:
+        return
+    side_px = 400
+    plate = marker_plate_png(obj.aruco_id, side_px)
+    texture = f"{obj.name}_aruco_tex"
+    material = f"{obj.name}_aruco_mat"
+    spec.add_texture(name=texture, type=mujoco.mjtTexture.mjTEXTURE_2D, file=str(plate))
+    spec.add_material(
+        name=material,
+        textures=["", texture],
+        emission=1.0,
+        specular=0.0,
+        shininess=0.0,
+        rgba=[1.0, 1.0, 1.0, 1.0],
+    )
+    plate_m = obj.aruco_size_m * plate_scale(side_px)
+    top = _collision_top_m(obj)
+    body.add_geom(
+        name=f"{obj.name}_aruco",
+        type=mujoco.mjtGeom.mjGEOM_BOX,
+        size=[plate_m / 2.0, plate_m / 2.0, 0.0004],
+        pos=[0.0, 0.0, top + 0.0004],
+        material=material,
+        rgba=[1.0, 1.0, 1.0, 1.0],
+        contype=0,
+        conaffinity=0,
+        density=0.0,
+        mass=0.0,
+    )
+
+
+def _collision_top_m(obj: ObjectSpec) -> float:
+    top = 0.0
+    for primitive in obj.collision:
+        center = primitive.pose.position_m[2]
+        if primitive.type is PrimitiveKind.BOX:
+            center += primitive.size_m[2] / 2.0
+        elif primitive.type is PrimitiveKind.SPHERE:
+            center += primitive.size_m[0]
+        else:
+            center += primitive.size_m[1] / 2.0
+        top = max(top, center)
+    return top
 
 
 def _mujoco_size(primitive: PrimitiveSpec) -> list[float]:

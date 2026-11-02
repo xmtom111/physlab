@@ -29,3 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transit, approach, retreat, and navigate-and-reach skills.
   `examples/04_pick_cube.py` and `examples/04b_mobile_pick.py` run seeds 0
   through 4.
+- Perception: ArUco detection and `SOLVEPNP_IPPE_SQUARE` pose estimation,
+  stereo fusion, wrist refinement, and Laplacian / Tenengrad focus scores.
+  An object with `aruco_id` gets a textured marker plate (`aruco_size_m`,
+  default 0.03 m). `examples/05_locate_markers.py` saves annotated images.

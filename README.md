@@ -50,6 +50,7 @@ MUJOCO_GL=egl uv run python examples/03_sim_arm_joints.py
 MUJOCO_GL=egl uv run python examples/03b_sim_mobile_base.py
 uv run python examples/04_pick_cube.py
 uv run python examples/04b_mobile_pick.py
+uv run python examples/05_locate_markers.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -95,10 +96,12 @@ the backend that actually renders.
 - `examples/01_core_poses.py` — pose composition demo
 - `examples/03_sim_arm_joints.py` — joint motion and an MP4
 - `examples/04_pick_cube.py` — xArm7 pick and place
+- `examples/05_locate_markers.py` — stereo ArUco localization and annotated images
 - `docs/motion.md` — inverse kinematics and planning
+- `docs/perception.md` — markers, fusion, and focus metrics
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
-Motion, perception, fabrication, and real-hardware packages are still empty.
+Fabrication and real-hardware packages are still empty.
 
 ## Checks
 
