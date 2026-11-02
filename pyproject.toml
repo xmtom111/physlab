@@ -114,7 +114,7 @@ markers = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["mujoco", "mujoco.*"]
+module = ["mujoco", "mujoco.*", "pandas", "pandas.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]

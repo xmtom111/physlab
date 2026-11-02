@@ -53,6 +53,7 @@ uv run python examples/04b_mobile_pick.py
 uv run python examples/05_locate_markers.py
 uv run python examples/06_print_and_pick.py
 uv run python examples/07_assemble_microscope.py
+uv run python examples/08_controller_debug_loop.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -104,6 +105,8 @@ the backend that actually renders.
 - `docs/fabrication.md` — parametric parts, print checks, and printer services
 - `docs/assembly.md` — plans, pick/place, fastening, and focus screws
 - `docs/optics.md` — paraxial helpers and the simulated microscope
+- `docs/controllers.md` — controller API, the AST guardrail, and the process sandbox
+- `examples/08_controller_debug_loop.py` — debug a focus controller from its summary
 - `examples/06_print_and_pick.py` — mock-print a lens holder and pick it up
 - `examples/07_assemble_microscope.py` — assemble and focus the microscope
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)

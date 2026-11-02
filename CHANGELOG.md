@@ -45,3 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `examples/07_assemble_microscope.py` mock-prints the microscope, assembles
   it, focuses the sample, and saves a PNG and an MP4.
   `examples/plans/microscope_v0.yaml` is the checked-in plan.
+- Controller sandbox: an allowlisted `Controller` API, an AST guardrail,
+  and a spawned process with a CPU limit, a 1 GiB address space, and a wall
+  timeout. Virtual stepper, servo, motor, LED, photodiode, load cell,
+  thermometer, and encoder devices. Focus, pendulum, and line-follow
+  scenarios. `examples/08_controller_debug_loop.py` runs a buggy focus law
+  and then the corrected one. MicroPython generation is out of scope;
+  `arduino-cli` compile and upload wrappers raise `DependencyMissing`
+  when the CLI is absent.
