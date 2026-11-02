@@ -1,4 +1,5 @@
-"""Parametric part library.
+"""Parametric part library."""
 
-Part generators are added in T6.
-"""
+from physlab.fabrication.parts.library import part_entries
+
+__all__ = ["part_entries"]

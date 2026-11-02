@@ -51,6 +51,7 @@ MUJOCO_GL=egl uv run python examples/03b_sim_mobile_base.py
 uv run python examples/04_pick_cube.py
 uv run python examples/04b_mobile_pick.py
 uv run python examples/05_locate_markers.py
+uv run python examples/06_print_and_pick.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -99,9 +100,11 @@ the backend that actually renders.
 - `examples/05_locate_markers.py` — stereo ArUco localization and annotated images
 - `docs/motion.md` — inverse kinematics and planning
 - `docs/perception.md` — markers, fusion, and focus metrics
+- `docs/fabrication.md` — parametric parts, print checks, and printer services
+- `examples/06_print_and_pick.py` — mock-print a lens holder and pick it up
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
-Fabrication and real-hardware packages are still empty.
+The real-hardware package is still empty.
 
 ## Checks
 

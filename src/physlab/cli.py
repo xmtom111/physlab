@@ -9,6 +9,7 @@ import yaml
 
 from physlab import __version__
 from physlab.core.config import load_config
+from physlab.fabrication.cli import register as register_printer
 from physlab.robots.cli import register
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
@@ -52,3 +53,4 @@ def config_show() -> None:
 
 
 register(app)
+register_printer(app)

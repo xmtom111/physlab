@@ -33,3 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stereo fusion, wrist refinement, and Laplacian / Tenengrad focus scores.
   An object with `aruco_id` gets a textured marker plate (`aruco_size_m`,
   default 0.03 m). `examples/05_locate_markers.py` saves annotated images.
+- Fabrication: parametric parts with a gripper notch and an ArUco recess,
+  trimesh print checks, a mock printer that spawns into `print_pickup_zone`,
+  and an MCP printer client whose tool names come from
+  `configs/printers/printer_mcp.yaml`. `physlab printer tools` and
+  `physlab printer submit` talk to that server.
+  `examples/06_print_and_pick.py` mock-prints a lens holder and picks it up.

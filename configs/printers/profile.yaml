@@ -1,0 +1,5 @@
+# Default FDM envelope used by check_printable and fabricate.
+bed_size_mm: [220, 220]
+max_height_mm: 250
+nozzle_mm: 0.4
+layer_mm: 0.2

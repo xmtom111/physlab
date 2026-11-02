@@ -1,3 +1,27 @@
-# Scaffold for the print-service MCP client (T6).
-# This file is not a stable schema yet. No server endpoint is configured.
-{}
+# Printer MCP client mapping. Tool names are filled in from `physlab printer tools`.
+# This file is the only place those names live. Python reads them; it does not
+# ship a default name for any printer tool.
+server:
+  command: npx
+  args: ["-y", "mcp-3d-printer-server"]
+  env:
+    PRINTER_HOST: ""
+    PRINTER_TYPE: ""
+tools:
+  slice: null
+  upload: null
+  start: null
+  status: null
+  cancel: null
+arg_templates:
+  slice: {}
+  upload: {}
+  start: {}
+  status: {}
+  cancel: {}
+result_fields:
+  job_id: job_id
+  state: state
+  progress: progress
+  message: message
+  eta_s: eta_s
