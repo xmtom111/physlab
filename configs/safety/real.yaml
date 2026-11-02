@@ -1,0 +1,4 @@
+# Real-hardware safety policy.
+# Agents must not edit this file or approve their own real-world actions.
+# The policy schema arrives with the safety gate (T12).
+{}

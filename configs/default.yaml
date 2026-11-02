@@ -1,0 +1,14 @@
+# Default physlab configuration. Relative paths resolve from the repository root
+# (the parent of this file's directory). Environment variables prefixed with
+# PHYSLAB_ override these values; nest with a double underscore, for example
+# PHYSLAB_SIM__TIMESTEP_S=0.001.
+mode: sim
+run_dir: runs
+assets_dir: assets
+configs_dir: configs
+seed: 0
+sim:
+  timestep_s: 0.002
+  render_width: 640
+  render_height: 480
+  gl_backend: egl

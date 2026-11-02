@@ -1,0 +1,4 @@
+# Human-maintained reagent allowlist.
+# Agents must not edit this file. The entry schema arrives with the chemistry
+# stack (T10). Until then the allowlist is empty, so no reagent is permitted.
+{}
