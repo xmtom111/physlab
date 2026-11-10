@@ -57,6 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failed trials, six curve fits scored by AIC, a safe expression parser,
   and a Markdown report. Library runs E1 (pendulum), E2 (incline), and
   E3 (thin lens). `examples/09_pendulum_law.py` writes the pendulum report.
+- MCP server (`physlab mcp serve`) on mcp 2.3 `MCPServer`. Tools cover
+  the session, robots, perception, fabrication, assembly, controllers,
+  experiments, and chemistry. Long calls return a job id. Real mode
+  requires an approval token from `physlab approve`; the token is checked
+  for presence only. `examples/11_mcp_client_demo.py` designs, mock-prints,
+  and assembles a lens holder. `AGENT_GUIDE.md` is written for the agent.
 - Chemistry: OT-2 labware, a read-only reagent allowlist, virtual dilution,
   weak-acid charge balance, Beer-Lambert, and seeded instrument noise.
   `ExperimentRunner.run_chem` records those readings.
