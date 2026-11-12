@@ -8,7 +8,8 @@ that logger instead of ``print``.
 from __future__ import annotations
 
 import logging as stdlib_logging
-from typing import cast
+import sys
+from typing import TextIO, cast
 
 import structlog
 from structlog.typing import FilteringBoundLogger
@@ -16,7 +17,12 @@ from structlog.typing import FilteringBoundLogger
 from physlab.core.errors import ConfigError
 
 
-def configure_logging(level: str | int, json: bool = False) -> None:
+def configure_logging(
+    level: str | int,
+    json: bool = False,
+    *,
+    stream: TextIO | None = None,
+) -> None:
     """Configure process-wide structlog output.
 
     JSON lines are written when ``json`` is true. Otherwise a console renderer
@@ -27,6 +33,9 @@ def configure_logging(level: str | int, json: bool = False) -> None:
     Args:
         level: Log level name such as ``"INFO"``, or a stdlib numeric level.
         json: Emit one JSON object per line when true.
+        stream: Where lines are written. Standard output is used when omitted.
+            The MCP stdio server passes standard error so logs are not framed
+            as protocol messages.
 
     Raises:
         ConfigError: ``level`` is not a known logging level.
@@ -46,7 +55,7 @@ def configure_logging(level: str | int, json: bool = False) -> None:
         processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(numeric_level),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout if stream is None else stream),
         cache_logger_on_first_use=False,
     )
 

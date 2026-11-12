@@ -58,6 +58,7 @@ uv run python examples/08_controller_debug_loop.py
 uv run python examples/09_pendulum_law.py
 uv run python examples/10_dye_calibration_curve.py
 uv run python examples/10b_titration_curve.py
+uv run python examples/11_mcp_client_demo.py
 ```
 
 If EGL cannot load, set `MUJOCO_GL=osmesa` and run the examples again. The
@@ -121,6 +122,43 @@ the backend that actually renders.
 - `tests/` — pytest suite (`hardware` tests are opted out with `-m "not hardware"`)
 
 The real-hardware package is still empty.
+
+## MCP server
+
+`physlab mcp serve` exposes one scene to an MCP client. The installed SDK
+is mcp 2.3, whose server class is `MCPServer` (`FastMCP` was renamed).
+The default scene is `table_gantry` (no Menagerie download). Set
+`MCP_SCENE=table_arm` after `physlab assets fetch` for the xArm.
+`MCP_SCENE` is not a `PHYSLAB_` override, so it does not change the config file.
+`--transport streamable-http` listens on `127.0.0.1:8000/mcp`.
+
+```json
+{
+  "mcpServers": {
+    "physlab": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/physlab",
+        "physlab",
+        "mcp",
+        "serve",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "MUJOCO_GL": "osmesa",
+        "MCP_SCENE": "table_gantry"
+      }
+    }
+  }
+}
+```
+
+A human mints a real-mode token with `physlab approve <plan_or_protocol_file>`.
+Agents must not approve their own actions. Tool names, units, and the
+order to call them are in [AGENT_GUIDE.md](AGENT_GUIDE.md).
 
 ## Checks
 

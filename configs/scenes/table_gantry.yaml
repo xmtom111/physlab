@@ -1,0 +1,17 @@
+# Procedural XYZ gantry on a table. This scene builds without MuJoCo Menagerie.
+# Joint commands are meters along X, Y, and Z, not radians.
+name: table_gantry
+table:
+  size_m: [1.2, 0.8]
+  height_m: 0.75
+robots:
+  - robot_id: gantry_xyz
+    instance: gantry
+    base_pose:
+      position_m: [0.0, 0.0, 0.9]
+      quat_wxyz: [1.0, 0.0, 0.0, 0.0]
+overhead_stereo:
+  height_m: 1.6
+  baseline_m: 0.2
+  width: 320
+  height: 240

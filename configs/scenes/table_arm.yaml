@@ -1,0 +1,32 @@
+# xArm7 on a table with the overhead pair and wrist camera used by assembly.
+# Requires assets/mujoco_menagerie from `physlab assets fetch`.
+# Joint commands are radians. Poses are meters in the world frame.
+# Quaternions are (w, x, y, z). The identity quaternion looks a camera down.
+name: table_arm
+table:
+  size_m: [1.2, 0.8]
+  height_m: 0.75
+robots:
+  - robot_id: ufactory_xarm7
+    instance: arm
+    base_pose:
+      position_m: [0.0, 0.0, 0.75]
+      quat_wxyz: [1.0, 0.0, 0.0, 0.0]
+cameras:
+  - name: overhead_left
+    fovy_deg: 60
+    width: 640
+    height: 480
+    pose:
+      position_m: [0.45, -0.06, 1.15]
+      quat_wxyz: [1.0, 0.0, 0.0, 0.0]
+  - name: overhead_right
+    fovy_deg: 60
+    width: 640
+    height: 480
+    pose:
+      position_m: [0.45, 0.06, 1.15]
+      quat_wxyz: [1.0, 0.0, 0.0, 0.0]
+wrist_cameras:
+  - instance: arm
+    ee_body: link7
