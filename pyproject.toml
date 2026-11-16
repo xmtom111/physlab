@@ -17,9 +17,7 @@ classifiers = [
 ]
 dependencies = [
   "mujoco>=3.2",
-  # MuJoCo imports PyOpenGL. The vendored wheel drops a stray egg-info file
-  # that makes `uv run` fail. See vendor/README.md.
-  "pyopengl==3.1.0",
+  "pyopengl>=3.1.7",
   "mink>=1.0",
   "numpy>=1.26",
   "scipy>=1.11",
@@ -67,13 +65,6 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-# MuJoCo depends on PyOpenGL. PyPI's 3.1.0 sdist builds a wheel that also
-# installs PyOpenGL-3.1.0.egg-info, which current uv refuses to uninstall, so
-# the next `uv run` fails. The wheel in vendor/ is that build with the extra
-# egg-info file removed. The Python code is unchanged.
-[tool.uv.sources]
-pyopengl = { path = "vendor/pyopengl-3.1.0-py3-none-any.whl" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/physlab"]
@@ -124,3 +115,7 @@ source = ["physlab"]
 fail_under = 80
 show_missing = true
 skip_empty = true
+
+# Legacy optional robot drivers pin 3.1.0; MuJoCo EGL requires modern EGL types.
+[tool.uv]
+override-dependencies = ["pyopengl>=3.1.7"]

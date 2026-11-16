@@ -196,6 +196,7 @@ class SceneSpec(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
 
+    chem_deck: bool = False
     table: TableSpec | None = None
     floor_size_m: tuple[float, float] = (4.0, 4.0)
     robots: list[RobotPlacement] = Field(default_factory=list)
@@ -243,6 +244,10 @@ def build_mjspec(scene: SceneSpec, catalog: RobotCatalog) -> mujoco.MjSpec:
         _add_camera(spec, camera)
     for stage in scene.focus_stages:
         _add_focus_stage(spec, stage)
+    if scene.chem_deck:
+        from physlab.chem.gantry_bridge import add_chem_deck
+
+        add_chem_deck(spec)
     _set_offscreen(spec, scene)
     return spec
 
