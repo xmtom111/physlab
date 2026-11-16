@@ -12,7 +12,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from physlab.chem.virtual_lab import ChemReading, VirtualChemLab
+from physlab.chem.virtual_lab import ChemReading
 from physlab.core.errors import ConfigError, PhysLabError
 from physlab.core.events import Actor, EventLog
 from physlab.experiments.protocol import ExperimentProtocol, validate_protocol
@@ -88,8 +88,6 @@ class ExperimentRunner:
         hypothesis: str,
         seed: int = 0,
         analyte: str = "food_dye",
-        lab: VirtualChemLab | None = None,
-        reset: bool = True,
     ) -> RunResult:
         """Run a chemistry protocol and store one trial per reading.
 
@@ -101,8 +99,6 @@ class ExperimentRunner:
             hypothesis: Stored on the run result for the report.
             seed: Plate-reader seed. The pH probe uses ``seed + 1``.
             analyte: Species recorded as ``concentration_m``.
-            lab: Optional persistent chemistry lab.
-            reset: Reload the supplied lab.
 
         Returns:
             Trials whose measurements are absorbance or pH. ``fit_models``
@@ -121,9 +117,7 @@ class ExperimentRunner:
         (directory / "media").mkdir(parents=True, exist_ok=True)
         text = protocol.model_dump_json(indent=2)
         (directory / "protocol.json").write_text(text, encoding="utf-8")
-        readings = (lab or VirtualChemLab(seed=seed, analyte=analyte)).execute(
-            protocol, reset=True if lab is None else reset
-        )
+        readings = VirtualChemLab(seed=seed, analyte=analyte).execute(protocol)
         trials = _chem_trials(readings)
         write_trials(directory, trials)
         self.event_log.record(

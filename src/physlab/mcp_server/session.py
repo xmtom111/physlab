@@ -8,7 +8,6 @@ and then refuses to drive the simulator as if it were the hardware.
 from __future__ import annotations
 
 import base64
-import copy
 import importlib.util
 import threading
 from pathlib import Path
@@ -107,9 +106,6 @@ class LabSession:
             ConfigError: The scene file is missing or invalid.
             AssetMissing: The scene names a robot whose mesh is not on disk.
         """
-        self._chem_lab = None
-        self._chem_trials = []
-        self.chem_bridge = None
         self.config = config
         self.catalog = RobotCatalog(config.configs_dir, config.assets_dir)
         self.event_log = EventLog(config.run_dir, mode=config.mode, seed=config.seed)
@@ -187,9 +183,6 @@ class LabSession:
             self._robots.clear()
             self._cameras.clear()
             self.scene_name, self.world, self.printer, self.inventory = self._open_scene(name)
-            self._chem_lab = None
-            self._chem_trials = []
-            self.chem_bridge = None
         _LOG.info("scene_loaded", scene=self.scene_name)
         return self.session_info()
 
@@ -211,13 +204,6 @@ class LabSession:
         chosen = self.config.seed if seed is None else seed
         with self.lock:
             self.world.reset(seed=chosen)
-            self._chem_lab = None
-            self._chem_trials = []
-            if self.chem_bridge is not None:
-                from physlab.chem.virtual_lab import VirtualChemLab
-
-                self.chem_bridge.sync(VirtualChemLab())
-                self.chem_bridge.frames.clear()
             time_s = self.world.time_s
         return {"seed": chosen, "time_s": time_s}
 
@@ -771,9 +757,6 @@ class LabSession:
             ConfigError: The JSON is not a chemistry protocol.
         """
         protocol = _parse(ChemProtocol, protocol_json, "chemistry protocol")
-        with self.lock:
-            if self._chem_lab is not None and not protocol.reagents:
-                protocol = self._chem_lab.combined(protocol)
         issues = validate_chem_protocol(protocol)
         decision = ChemSafetyPolicy.load().check_protocol(
             protocol,
@@ -802,10 +785,6 @@ class LabSession:
             SafetyViolation: The allowlist denied the protocol.
             ConfigError: The protocol does not fit the labware.
         """
-        with self.lock:
-            return self._run_chem_locked(request, progress)
-
-    def _run_chem_locked(self, request: RunChemInput, progress: Progress) -> dict[str, object]:
         self._hardware("run_chem_protocol", request.approval_token)
         protocol = _parse(ChemProtocol, request.protocol, "chemistry protocol")
         decision = ChemSafetyPolicy.load().check_protocol(
@@ -820,41 +799,14 @@ class LabSession:
             )
         log = EventLog(self.config.run_dir, mode=self.config.mode, seed=request.seed)
         progress(0.2)
-        from physlab.chem.gantry_bridge import GantryBridge
-        from physlab.chem.protocol import TransferStep
-        from physlab.chem.virtual_lab import VirtualChemLab
-
-        if self._chem_lab is None:
-            self._chem_lab = VirtualChemLab(seed=request.seed, analyte=request.analyte)
-        before = copy.deepcopy(self._chem_lab)
         result = ExperimentRunner(log).run_chem(
             protocol,
-            lab=self._chem_lab,
-            reset=bool(protocol.reagents),
             question=request.question,
             hypothesis=request.hypothesis,
             seed=request.seed,
             analyte=request.analyte,
         )
         with self.lock:
-            if protocol.reagents:
-                self._chem_trials = []
-            self._chem_trials.extend(result.trials)
-            result.trials[:] = self._chem_trials
-            from physlab.experiments.storage import write_trials
-
-            write_trials(result.directory, result.trials)
-            if self.world.scene.chem_deck:
-                if self.chem_bridge is None:
-                    self.chem_bridge = GantryBridge(self.world)
-                if protocol.reagents:
-                    before._load(protocol)
-                for step in protocol.steps:
-                    previous = copy.deepcopy(before)
-                    before._apply(protocol, step)
-                    if isinstance(step, TransferStep):
-                        self.chem_bridge.animate(step, previous, before)
-                self.chem_bridge.sync(self._chem_lab)
             self.runs[result.run_id] = result
         progress(1.0)
         return _run_summary(result)
