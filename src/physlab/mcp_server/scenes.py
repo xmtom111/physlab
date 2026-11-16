@@ -102,6 +102,7 @@ class SceneFile(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     name: str
+    chem_deck: bool = False
     table: _TableFile | None = None
     floor_size_m: tuple[float, float] = (4.0, 4.0)
     robots: list[_RobotFile] = Field(default_factory=list)
@@ -186,6 +187,7 @@ def load_scene_file(path: Path) -> tuple[str, SceneSpec]:
         else TableSpec(size_m=parsed.table.size_m, height_m=parsed.table.height_m)
     )
     scene = SceneSpec(
+        chem_deck=parsed.chem_deck,
         table=table,
         floor_size_m=parsed.floor_size_m,
         robots=[

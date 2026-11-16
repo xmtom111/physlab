@@ -1,3 +1,24 @@
+![Simulated gantry chemistry demo](docs/demo_chem_gantry.gif)
+
+This is a pure simulation demo: a fixed XYZ pipette titrates unknown acetic acid
+with phenolphthalein in a 300 µL well. Run it offline with
+`MUJOCO_GL=egl uv run python examples/12_visual_titration_agent.py` (FakeLLM by default).
+The 80 µL, 0.05 M simulated acid has a theoretical endpoint of 40 µL of 0.1 M NaOH;
+the controller receives measured pH, not the hidden acid concentration.
+
+For a ten-minute demonstration, spend two minutes on the four check-only safety
+rejections, six on gantry pipetting, coarse-to-fine dosing and the pink endpoint,
+and two on the fitted report and three-panel GIF in the final `runs/<run_id>/`
+directory. Human-maintained allowlists remain authoritative. Laboratory deployment
+should connect Opentrons (protocol export targets API v2.28) before assembling an
+expensive robot arm. Gradio/Rerun live dashboards are phase two.
+
+To refresh the committed animation, add `--write-docs-gif`. For a real HTTP LLM,
+add `--real-llm --model MODEL --base-url https://your-provider` and set
+`PHYS_LAB_LLM_API_KEY`; `--key-env NAME` selects another environment variable.
+The endpoint is OpenAI-compatible `/v1/chat/completions`. No key is needed for the
+default demo or tests. The scene needs neither Menagerie nor a display.
+
 # physlab
 
 physlab is a Python framework for running a lab from code: robot arms and mobile

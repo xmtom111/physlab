@@ -28,7 +28,7 @@ from physlab.chem.reactions import (
     transfer_contents,
 )
 from physlab.chem.safety import ChemSafetyPolicy
-from physlab.core.errors import SafetyViolation
+from physlab.core.errors import ConfigError, SafetyViolation
 from physlab.core.types import Mode
 
 
@@ -79,15 +79,17 @@ class VirtualChemLab:
         self.mode = mode
         self.approval_token = approval_token
         self.analyte = analyte
+        self._history: ChemProtocol | None = None
         self._wells: dict[str, _LiveWell] = {}
         self._stocks: dict[str, str] = {}
         self._titrant_ul: dict[str, float] = {}
 
-    def execute(self, protocol: ChemProtocol) -> list[ChemReading]:
+    def execute(self, protocol: ChemProtocol, *, reset: bool = True) -> list[ChemReading]:
         """Run every step.
 
         Args:
             protocol: Already described deck, fills, and steps.
+            reset: Reload the deck; false applies only new steps.
 
         Returns:
             One reading per absorbance well and per pH read.
@@ -96,9 +98,10 @@ class VirtualChemLab:
             ConfigError: Volumes or tips do not fit.
             SafetyViolation: The allowlist denies the protocol.
         """
-        require_valid(protocol)
+        checked = protocol if reset else self.combined(protocol)
+        require_valid(checked)
         decision = self.policy.check_protocol(
-            protocol,
+            checked,
             mode=self.mode,
             approval_token=self.approval_token,
         )
@@ -106,11 +109,31 @@ class VirtualChemLab:
             raise SafetyViolation(
                 "Chemistry protocol denied", details={"violations": decision.violations}
             )
-        self._load(protocol)
+        if reset:
+            self._load(protocol)
+        self._history = checked
         readings: list[ChemReading] = []
         for step in protocol.steps:
             readings.extend(self._apply(protocol, step))
         return readings
+
+    def combined(self, protocol: ChemProtocol) -> ChemProtocol:
+        """Describe history plus new steps without changing state.
+
+        Args:
+            protocol: New steps with the same deck and no repeated fills.
+
+        Returns:
+            Complete protocol for volume and mixture safety validation.
+
+        Raises:
+            ConfigError: The request changes deck or repeats fills.
+        """
+        if self._history is None:
+            return protocol
+        if protocol.reagents or protocol.labware != self._history.labware:
+            raise ConfigError("Incremental protocols must keep the deck and omit fills")
+        return self._history.model_copy(update={"steps": self._history.steps + protocol.steps})
 
     def _load(self, protocol: ChemProtocol) -> None:
         self._wells = {}
